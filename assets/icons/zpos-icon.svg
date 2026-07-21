@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#2E7D32"/>
+  <path fill="#FFFFFF" d="M112 132h288v72H112zm0 96h288v152H112z" opacity=".18"/>
+  <path fill="#FFFFFF" d="M132 156h248v32H132zm0 96h248v112H132z"/>
+  <path fill="#2E7D32" d="M156 252h200v16H156zm0 32h72v52h-72zm92 0h108v16H248zm0 32h108v20H248z"/>
+  <text x="256" y="374" text-anchor="middle" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="74" font-weight="700">ZPOS</text>
+</svg>

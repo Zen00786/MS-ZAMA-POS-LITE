@@ -1,0 +1,26 @@
+/* =========================================================
+   MS ZAMA POS Lite
+   Global Theme
+========================================================= */
+
+:root{
+
+    --primary:#2E7D32;
+
+    --secondary:#43A047;
+
+    --dark:#1E293B;
+
+    --light:#F5F7FA;
+
+    --white:#FFFFFF;
+
+    --danger:#E53935;
+
+    --warning:#F9A825;
+
+    --border:#D6DCE5;
+
+    --radius:10px;
+
+}

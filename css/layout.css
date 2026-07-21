@@ -1,0 +1,210 @@
+/* =========================================================
+   MS ZAMA POS Lite
+   File : layout.css
+   Purpose : Main Application Layout
+   Author : MS ZAMA Dynamics
+   Version : 1.0
+========================================================= */
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+
+/* =========================================================
+   BODY
+========================================================= */
+
+body{
+
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f5f7fa;
+    color:#333;
+}
+
+
+/* =========================================================
+   APP CONTAINER
+========================================================= */
+
+#app{
+
+    display:flex;
+    min-height:100vh;
+}
+
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+#sidebar{
+
+    width:250px;
+    background:#1e293b;
+    color:white;
+
+}
+
+
+/* =========================================================
+   MAIN AREA
+========================================================= */
+
+#main{
+
+    flex:1;
+
+    display:flex;
+    flex-direction:column;
+
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+#header{
+
+    height:70px;
+
+    background:white;
+
+    border-bottom:1px solid #ddd;
+
+}
+
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+#content{
+
+    flex:1;
+
+    padding:25px;
+
+    overflow:visible;
+
+}
+
+
+/* =========================================================
+   LOGO
+========================================================= */
+
+.logo{
+
+    text-align:center;
+
+    padding:30px 20px;
+
+    border-bottom:1px solid rgba(255,255,255,.1);
+
+}
+
+.logo h2{
+
+    font-size:28px;
+
+    margin-bottom:5px;
+
+}
+
+.logo p{
+
+    color:#cbd5e1;
+
+}
+
+
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+nav ul{
+
+    list-style:none;
+
+    padding:20px 0;
+
+}
+
+
+nav li{
+
+    padding:16px 25px;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+
+nav li:hover{
+
+    background:#334155;
+
+}
+
+
+nav li.active{
+
+    background:var(--primary);
+
+}
+
+
+#header{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:0 25px;
+
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media(max-width:900px){
+
+.dashboard-grid{
+
+    grid-template-columns:1fr 1fr;
+
+}
+
+}
+
+
+@media(max-width:600px){
+
+#sidebar{
+
+    width:80px;
+
+}
+
+.dashboard-grid{
+
+    grid-template-columns:1fr;
+
+}
+
+}

@@ -1,0 +1,736 @@
+/* ==========================================
+   Database
+========================================== */
+
+let db;
+
+/* ==========================================
+   Open Database
+========================================== */
+
+const request = indexedDB.open("ZPOSLiteDB", 5);
+
+request.onupgradeneeded = function(event){
+
+    db = event.target.result;
+
+    if(!db.objectStoreNames.contains("products")){
+
+        db.createObjectStore("products", {
+
+            keyPath: "id",
+            autoIncrement: true
+
+        });
+
+    }
+
+    if(!db.objectStoreNames.contains("bills")){
+
+        db.createObjectStore("bills", {
+
+            keyPath: "id",
+            autoIncrement: true
+
+        });
+
+    }
+
+    if(!db.objectStoreNames.contains("settings")){
+
+    db.createObjectStore("settings",{
+
+        keyPath:"id"
+
+    });
+
+}
+
+    if(!db.objectStoreNames.contains("counters")){
+
+        db.createObjectStore("counters", {
+
+            keyPath: "id"
+
+        });
+
+    }
+
+};
+
+request.onsuccess = function(event){
+
+db = event.target.result;
+
+console.log("Database Connected");
+
+loadProducts();
+loadBills();
+loadSettings();
+loadBillNumber();
+
+};
+
+request.onerror = function(){
+
+    console.log("Database Error");
+
+};
+
+
+/* ==========================================
+   Save Product
+========================================== */
+
+function saveProduct(product, onSuccess, onError){
+
+    const transaction = db.transaction(["products"], "readwrite");
+
+    const store = transaction.objectStore("products");
+
+   const request = store.add(product);
+
+request.onsuccess = function(event){
+
+    product.id = event.target.result;
+
+};
+
+    transaction.oncomplete = function(){
+
+        console.log("Product Saved");
+
+        if(onSuccess){
+
+            onSuccess();
+
+        }
+
+    };
+
+    transaction.onerror = function(){
+
+        if(onError){
+
+            onError();
+
+        }
+
+    };
+
+}
+
+/* ==========================================
+   Save Bill
+========================================== */
+
+function saveBill(bill){
+
+    const transaction = db.transaction(["bills"], "readwrite");
+
+    const store = transaction.objectStore("bills");
+
+    store.add(bill);
+
+    transaction.oncomplete = function(){
+
+        console.log("Bill Saved");
+
+    };
+
+}
+
+/* ==========================================
+   Load Bills
+========================================== */
+
+function loadBills(onLoaded){
+
+    billHistory = [];
+
+    const transaction = db.transaction(["bills"], "readonly");
+
+    const store = transaction.objectStore("bills");
+
+    const request = store.getAll();
+
+    request.onsuccess = function(){
+
+        billHistory = request.result;
+
+        console.log("Bills Loaded", billHistory);
+
+        if(onLoaded){
+
+            onLoaded(billHistory);
+
+        }
+
+    };
+
+}
+
+
+/* ==========================================
+   Load Products
+========================================== */
+
+function loadProducts(onLoaded){
+
+    products = [];
+
+    const transaction = db.transaction(["products"], "readonly");
+
+    const store = transaction.objectStore("products");
+
+    const request = store.getAll();
+
+    request.onsuccess = function(){
+
+        products = request.result;
+
+        console.log(products);
+
+        if(onLoaded){
+
+            onLoaded(products);
+
+        }
+
+    };
+
+}
+
+/* ==========================================
+   Delete Product From DB
+========================================== */
+
+function deleteProductDB(id, onSuccess, onError){
+
+    const transaction = db.transaction(["products"], "readwrite");
+
+    const store = transaction.objectStore("products");
+
+    store.delete(id);
+
+}
+
+/* ==========================================
+   Update Product
+========================================== */
+
+function updateProductDB(product){
+
+    const transaction = db.transaction(["products"], "readwrite");
+
+    const store = transaction.objectStore("products");
+
+    store.put(product);
+
+}
+
+
+/* ==========================================
+   Save Settings
+========================================== */
+
+function saveSettingsDB(settings, onComplete){
+
+    const transaction =
+        db.transaction(["settings"],"readwrite");
+
+    const store =
+        transaction.objectStore("settings");
+
+    store.put({
+
+        id:1,
+
+        ...settings
+
+    });
+
+    transaction.oncomplete = function(){
+
+        if(onComplete){
+
+            onComplete();
+
+        }
+
+    };
+
+}
+
+
+/* ==========================================
+   Load Settings
+========================================== */
+
+function loadSettings(){
+
+    const transaction =
+        db.transaction(["settings"],"readonly");
+
+    const store =
+        transaction.objectStore("settings");
+
+    const request =
+        store.get(1);
+
+    request.onsuccess = function(){
+
+        if(request.result){
+
+            settings = request.result;
+
+        }
+        else{
+
+            saveSettingsDB(settings);
+
+        }
+
+    };
+
+}
+
+/* ==========================================
+   Invoice Number Counter
+========================================== */
+
+function loadBillNumber(){
+
+    const transaction = db.transaction(["counters"], "readonly");
+
+    const store = transaction.objectStore("counters");
+
+    const request = store.get("billNumber");
+
+    request.onsuccess = function(){
+
+        const savedBillNumber = Number(request.result && request.result.value);
+
+        if(Number.isInteger(savedBillNumber) && savedBillNumber > 0){
+
+            setBillNumber(savedBillNumber);
+
+            return;
+
+        }
+
+        restoreBillNumberFromExistingBills();
+
+    };
+
+    request.onerror = function(){
+
+        setBillNumber(1);
+
+    };
+
+}
+
+function restoreBillNumberFromExistingBills(){
+
+    const transaction = db.transaction(["bills"], "readonly");
+
+    const store = transaction.objectStore("bills");
+
+    const request = store.getAll();
+
+    request.onsuccess = function(){
+
+        let highestBillNumber = 0;
+
+        request.result.forEach(function(bill){
+
+            const match = String(bill.billNo || "").match(/-(\d+)$/);
+
+            if(match){
+
+                highestBillNumber = Math.max(highestBillNumber, Number(match[1]));
+
+            }
+
+        });
+
+        const nextBillNumber = highestBillNumber + 1;
+
+        setBillNumber(nextBillNumber);
+
+        saveBillNumber(nextBillNumber);
+
+    };
+
+    request.onerror = function(){
+
+        setBillNumber(1);
+
+    };
+
+}
+
+function saveBillNumber(nextBillNumber){
+
+    const transaction = db.transaction(["counters"], "readwrite");
+
+    const store = transaction.objectStore("counters");
+
+    store.put({
+
+        id: "billNumber",
+        value: nextBillNumber
+
+    });
+
+}
+
+/* ==========================================
+   Save Bill And Advance Invoice Number
+========================================== */
+
+function saveBillAndAdvanceNumber(bill, nextBillNumber, onSuccess, onError){
+
+    const transaction = db.transaction(["bills", "counters"], "readwrite");
+
+    const billStore = transaction.objectStore("bills");
+    const counterStore = transaction.objectStore("counters");
+
+    const request = billStore.add(bill);
+
+    request.onsuccess = function(event){
+
+        bill.id = event.target.result;
+
+    };
+
+    counterStore.put({
+
+        id: "billNumber",
+        value: nextBillNumber
+
+    });
+
+    transaction.oncomplete = function(){
+
+        if(onSuccess){
+
+            onSuccess();
+
+        }
+
+    };
+
+    transaction.onerror = function(){
+
+        if(onError){
+
+            onError();
+
+        }
+
+    };
+
+}
+
+/* ==========================================
+   Delete Bill From DB
+========================================== */
+
+function deleteBillDB(id, onSuccess, onError){
+
+    const transaction = db.transaction(["bills"], "readwrite");
+
+    const store = transaction.objectStore("bills");
+
+    store.delete(id);
+
+    transaction.oncomplete = function(){
+
+        if(onSuccess){
+
+            onSuccess();
+
+        }
+
+    };
+
+    transaction.onerror = function(){
+
+        if(onError){
+
+            onError();
+
+        }
+
+    };
+
+    transaction.oncomplete = function(){
+
+        if(onSuccess){
+
+            onSuccess();
+
+        }
+
+    };
+
+    transaction.onerror = function(){
+
+        if(onError){
+
+            onError();
+
+        }
+
+    };
+
+}
+
+/* ==========================================
+   Backup And Restore
+========================================== */
+
+function exportBackupData(){
+
+    const storeNames = ["products", "bills", "settings", "counters"];
+    const transaction = db.transaction(storeNames, "readonly");
+    const backupData = {};
+
+    storeNames.forEach(function(storeName){
+
+        const store = transaction.objectStore(storeName);
+        const request = storeName === "settings"
+            ? store.get(1)
+            : store.getAll();
+
+        request.onsuccess = function(){
+
+            if(storeName === "settings"){
+
+                backupData.settings = request.result
+                    ? [request.result]
+                    : [{ id:1, ...settings }];
+
+                return;
+
+            }
+
+            backupData[storeName] = request.result;
+
+        };
+
+    });
+
+    transaction.oncomplete = function(){
+
+        const backup = {
+
+            app: "MS ZAMA POS Lite",
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            data: backupData
+
+        };
+
+        const file = new Blob([JSON.stringify(backup, null, 2)], {
+
+            type: "application/json"
+
+        });
+
+        const downloadUrl = URL.createObjectURL(file);
+        const link = document.createElement("a");
+
+        link.href = downloadUrl;
+        link.download = `ms-zama-pos-lite-backup-${new Date().toISOString().slice(0, 10)}.json`;
+
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+
+        URL.revokeObjectURL(downloadUrl);
+
+    };
+
+    transaction.onerror = function(){
+
+        alert("Unable to create the backup. Please try again.");
+
+    };
+
+}
+
+function importBackupData(backup, onSuccess, onError){
+
+    const validation = validateBackupData(backup);
+
+    if(!validation.valid){
+
+        onError(validation.message);
+
+        return;
+
+    }
+
+    const storeNames = ["products", "bills", "settings", "counters"];
+    const transaction = db.transaction(storeNames, "readwrite");
+    let completed = false;
+    let failed = false;
+
+    storeNames.forEach(function(storeName){
+
+        const store = transaction.objectStore(storeName);
+
+        store.clear();
+
+        backup.data[storeName].forEach(function(record){
+
+            store.put(record);
+
+        });
+
+    });
+
+    transaction.oncomplete = function(){
+
+        completed = true;
+
+        onSuccess();
+
+    };
+
+    transaction.onabort = function(){
+
+        if(!completed && !failed){
+
+            failed = true;
+
+            onError("Backup could not be restored. Existing data was not changed.");
+
+        }
+
+    };
+
+    transaction.onerror = function(){
+
+        if(!completed && !failed){
+
+            failed = true;
+
+            onError("Backup could not be restored. Existing data was not changed.");
+
+        }
+
+    };
+
+}
+
+function validateBackupData(backup){
+
+    if(!backup || typeof backup !== "object" || Array.isArray(backup)){
+
+        return { valid:false, message:"Invalid backup file." };
+
+    }
+
+    if(backup.app !== "MS ZAMA POS Lite" || backup.version !== 1 || !backup.data){
+
+        return { valid:false, message:"This file is not a valid MS ZAMA POS Lite backup." };
+
+    }
+
+    const data = backup.data;
+    const storeNames = ["products", "bills", "settings", "counters"];
+
+    for(let index = 0; index < storeNames.length; index++){
+
+        const storeName = storeNames[index];
+
+        if(!Array.isArray(data[storeName]) || !data[storeName].every(isBackupRecord)){
+
+            return { valid:false, message:"Backup data is incomplete or invalid." };
+
+        }
+
+    }
+
+    if(!hasUniqueNumericIds(data.products) || !hasUniqueNumericIds(data.bills)){
+
+        return { valid:false, message:"Backup contains invalid product or bill identifiers." };
+
+    }
+
+    if(data.settings.length > 1 || (data.settings[0] && data.settings[0].id !== 1)){
+
+        return { valid:false, message:"Backup contains invalid settings data." };
+
+    }
+
+    if(data.counters.length !== 1 || data.counters[0].id !== "billNumber" ||
+        !Number.isInteger(data.counters[0].value) || data.counters[0].value < 1){
+
+        return { valid:false, message:"Backup contains an invalid invoice counter." };
+
+    }
+
+    let highestBillNumber = 0;
+
+    for(let index = 0; index < data.bills.length; index++){
+
+        const bill = data.bills[index];
+
+        if(typeof bill.billNo !== "string" || !Array.isArray(bill.items)){
+
+            return { valid:false, message:"Backup contains invalid bill data." };
+
+        }
+
+        const match = bill.billNo.match(/-(\d+)$/);
+
+        if(match){
+
+            highestBillNumber = Math.max(highestBillNumber, Number(match[1]));
+
+        }
+
+    }
+
+    if(data.counters[0].value <= highestBillNumber){
+
+        return { valid:false, message:"Backup invoice counter would create duplicate invoice numbers." };
+
+    }
+
+    return { valid:true };
+
+}
+
+function isBackupRecord(record){
+
+    return record && typeof record === "object" && !Array.isArray(record);
+
+}
+
+function hasUniqueNumericIds(records){
+
+    const ids = new Set();
+
+    for(let index = 0; index < records.length; index++){
+
+        const id = records[index].id;
+
+        if(!Number.isInteger(id) || id < 1 || ids.has(id)){
+
+            return false;
+
+        }
+
+        ids.add(id);
+
+    }
+
+    return true;
+
+}
