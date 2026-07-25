@@ -26,6 +26,10 @@ function showReports(){
 
     content.innerHTML = `
 
+    <button onclick="exportSalesCSV()">
+    Export Sales (CSV)
+</button>
+
         <div class="page-title">
 
             <h1>Reports</h1>
@@ -138,5 +142,49 @@ function getTotalSales(){
     });
 
     return sales;
+
+}
+
+
+/*CSV Reporting*/
+
+function exportSalesCSV(){
+
+    let csv =
+"Invoice No,Date,Customer,Phone,Payment,Subtotal,GST,Grand Total\n";
+
+    billHistory.forEach(function(bill){
+
+csv += [
+    `"${bill.billNo}"`,
+    `"${bill.date}"`,
+    `"${bill.customerName}"`,
+    `"${bill.customerPhone}"`,
+    `"${bill.paymentMethod}"`,
+    `"${bill.subtotal}"`,
+    `"${bill.gst}"`,
+    `"${bill.total}"`
+].join(",") + "\n";
+
+    });
+
+    const blob = new Blob([csv],{
+        type:"text/csv"
+    });
+
+    const url =
+        URL.createObjectURL(blob);
+
+    const a =
+        document.createElement("a");
+
+    a.href = url;
+
+    a.download =
+"sales-report.csv";
+
+    a.click();
+
+    URL.revokeObjectURL(url);
 
 }
