@@ -1,4 +1,4 @@
-const CACHE_NAME = "ms-zama-pos-lite-v2";
+const CACHE_NAME = "ms-zama-pos-lite-v3";
 
 const APP_SHELL = [
     "./",

@@ -311,6 +311,24 @@ function showBilling(){
 
 </button>
 
+<button onclick="holdBill()">
+
+    Hold Bill
+
+</button>
+
+        </div>
+
+        <div class="card">
+
+            <h2>Held Bills</h2>
+
+            <div id="held-bills">
+
+                No bills on hold.
+
+            </div>
+
         </div>
 
     `;
@@ -320,6 +338,8 @@ function showBilling(){
         loadProductsDropdown();
 
     });
+
+    renderHeldBills();
 
 }
 

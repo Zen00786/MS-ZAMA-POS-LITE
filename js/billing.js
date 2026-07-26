@@ -3,6 +3,7 @@
 ========================================== */
 
 let billItems = [];
+let heldBills = [];
 let billNumber = 1;
 let billNumberLoaded = false;
 let isGeneratingBill = false;
@@ -632,6 +633,158 @@ function printBill(){
     }
 
     printInvoice(invoice.innerHTML);
+
+}
+
+/* ==========================================
+   Hold Bill
+========================================== */
+
+function holdBill(){
+
+    const customerName = document.getElementById("customer-name").value;
+    const customerPhone = document.getElementById("customer-phone").value;
+    const paymentMethod = document.getElementById("payment-method").value;
+
+    const heldBill = {
+
+        id: Date.now(),
+        customerName,
+        customerPhone,
+        paymentMethod,
+        billItems:[...billItems]
+
+    };
+
+    heldBills.push(heldBill);
+
+    saveHeldBillDB(heldBill);
+
+    billItems = [];
+
+    document.getElementById("invoice").innerHTML = "";
+
+    document.getElementById("customer-name").value = "";
+
+    document.getElementById("customer-phone").value = "";
+
+    document.getElementById("payment-method").selectedIndex = 0;
+
+    document.getElementById("bill-product").selectedIndex = 0;
+
+    document.getElementById("bill-qty").value = 1;
+
+    displayBill();
+
+    renderHeldBills();
+
+    alert("Bill placed on Hold.");
+
+}
+
+/* ==========================================
+   Held Bills
+========================================== */
+
+function renderHeldBills(){
+
+    const heldBillsContainer = document.getElementById("held-bills");
+
+    if(!heldBillsContainer){
+
+        return;
+
+    }
+
+    if(heldBills.length === 0){
+
+        heldBillsContainer.innerHTML = "No bills on hold.";
+
+        return;
+
+    }
+
+    heldBillsContainer.innerHTML = heldBills.map(function(bill, index){
+
+        return `
+
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;">
+
+    <div>
+
+        <strong>${bill.customerName || "Walk-in Customer"}</strong><br>
+
+        <span>${bill.billItems.length} item${bill.billItems.length === 1 ? "" : "s"}</span>
+
+    </div>
+
+    <div>
+
+        <button onclick="resumeHeldBill(${index})">Resume</button>
+
+        <button onclick="deleteHeldBill(${index})">Delete</button>
+
+    </div>
+
+</div>
+
+`;
+
+    }).join("");
+
+}
+
+function resumeHeldBill(index){
+
+    const heldBill = heldBills[index];
+
+    if(!heldBill){
+
+        return;
+
+    }
+
+    document.getElementById("customer-name").value = heldBill.customerName;
+
+    document.getElementById("customer-phone").value = heldBill.customerPhone;
+
+    document.getElementById("payment-method").value = heldBill.paymentMethod;
+
+    billItems = [...heldBill.billItems];
+
+    deleteHeldBillDB(heldBill.id);
+
+    heldBills.splice(index, 1);
+
+    document.getElementById("invoice").innerHTML = "";
+
+    displayBill();
+
+    renderHeldBills();
+
+}
+
+function deleteHeldBill(index){
+
+    const heldBill = heldBills[index];
+
+    if(!heldBill){
+
+        return;
+
+    }
+
+    if(!confirm("Delete this held bill?")){
+
+        return;
+
+    }
+
+    deleteHeldBillDB(heldBill.id);
+
+    heldBills.splice(index, 1);
+
+    renderHeldBills();
 
 }
 

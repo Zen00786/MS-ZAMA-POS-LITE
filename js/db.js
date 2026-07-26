@@ -8,7 +8,7 @@ let db;
    Open Database
 ========================================== */
 
-const request = indexedDB.open("ZPOSLiteDB", 5);
+const request = indexedDB.open("ZPOSLiteDB", 6);
 
 request.onupgradeneeded = function(event){
 
@@ -56,6 +56,16 @@ request.onupgradeneeded = function(event){
 
     }
 
+    if(!db.objectStoreNames.contains("heldBills")){
+
+        db.createObjectStore("heldBills", {
+
+            keyPath: "id"
+
+        });
+
+    }
+
 };
 
 request.onsuccess = function(event){
@@ -68,6 +78,7 @@ loadProducts();
 loadBills();
 loadSettings();
 loadBillNumber();
+loadHeldBills();
 
 };
 
@@ -167,6 +178,48 @@ function loadBills(onLoaded){
         }
 
     };
+
+}
+
+/* ==========================================
+   Held Bills
+========================================== */
+
+function saveHeldBillDB(heldBill){
+
+    const transaction = db.transaction(["heldBills"], "readwrite");
+
+    const store = transaction.objectStore("heldBills");
+
+    store.put(heldBill);
+
+}
+
+function loadHeldBills(){
+
+    const transaction = db.transaction(["heldBills"], "readonly");
+
+    const store = transaction.objectStore("heldBills");
+
+    const request = store.getAll();
+
+    request.onsuccess = function(){
+
+        heldBills = request.result;
+
+        renderHeldBills();
+
+    };
+
+}
+
+function deleteHeldBillDB(id){
+
+    const transaction = db.transaction(["heldBills"], "readwrite");
+
+    const store = transaction.objectStore("heldBills");
+
+    store.delete(id);
 
 }
 
@@ -494,7 +547,7 @@ function deleteBillDB(id, onSuccess, onError){
 
 function exportBackupData(){
 
-    const storeNames = ["products", "bills", "settings", "counters"];
+    const storeNames = ["products", "bills", "settings", "counters", "heldBills"];
     const transaction = db.transaction(storeNames, "readonly");
     const backupData = {};
 
@@ -574,7 +627,7 @@ function importBackupData(backup, onSuccess, onError){
 
     }
 
-    const storeNames = ["products", "bills", "settings", "counters"];
+    const storeNames = ["products", "bills", "settings", "counters", "heldBills"];
     const transaction = db.transaction(storeNames, "readwrite");
     let completed = false;
     let failed = false;
@@ -642,7 +695,7 @@ function validateBackupData(backup){
     }
 
     const data = backup.data;
-    const storeNames = ["products", "bills", "settings", "counters"];
+    const storeNames = ["products", "bills", "settings", "counters", "heldBills"];
 
     for(let index = 0; index < storeNames.length; index++){
 
@@ -656,7 +709,8 @@ function validateBackupData(backup){
 
     }
 
-    if(!hasUniqueNumericIds(data.products) || !hasUniqueNumericIds(data.bills)){
+    if(!hasUniqueNumericIds(data.products) || !hasUniqueNumericIds(data.bills) ||
+        !hasUniqueNumericIds(data.heldBills)){
 
         return { valid:false, message:"Backup contains invalid product or bill identifiers." };
 
