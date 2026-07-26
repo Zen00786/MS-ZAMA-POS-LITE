@@ -1,4 +1,4 @@
-const CACHE_NAME = "ms-zama-pos-lite-v1";
+const CACHE_NAME = "ms-zama-pos-lite-v2";
 
 const APP_SHELL = [
     "./",
@@ -8,7 +8,9 @@ const APP_SHELL = [
     "./css/layout.css",
     "./css/components.css",
     "./css/pages.css",
-    "./css/print.css",
+    "./css/print-a4.css",
+    "./css/print-58.css",
+    "./css/print-80.css",
     "./js/db.js",
     "./js/ui.js",
     "./js/products.js",

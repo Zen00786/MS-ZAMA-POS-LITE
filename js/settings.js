@@ -12,7 +12,9 @@ let settings = {
 
     phone : "",
 
-    address : ""
+    address : "",
+
+    printFormat : "A4"
 
 };
 
@@ -57,6 +59,29 @@ function showSettings(){
             placeholder="Address">${settings.address}</textarea>
 
             <br><br>
+
+<label><strong>Print Format</strong></label>
+
+<br><br>
+
+<select id="print-format">
+
+    <option value="A4"
+        ${settings.printFormat==="A4"?"selected":""}>
+        A4 Invoice
+    </option>
+
+    <option value="58mm"
+        ${settings.printFormat==="58mm"?"selected":""}>
+        58 mm Thermal
+    </option>
+
+    <option value="80mm"
+        ${settings.printFormat==="80mm"?"selected":""}>
+        80 mm Thermal
+    </option>
+
+</select>
 
             <button onclick="saveSettings()">
 
@@ -108,6 +133,9 @@ function saveSettings(){
 
     settings.address =
         document.getElementById("address").value;
+
+        settings.printFormat =
+    document.getElementById("print-format").value;
 
     saveSettingsDB(settings, function(){
 

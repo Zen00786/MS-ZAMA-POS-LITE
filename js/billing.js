@@ -248,6 +248,19 @@ const customerPhone =
 const paymentMethod =
     document.getElementById("payment-method").value;
 
+let grandTotal = 0;
+let totalGST = 0;
+
+billItems.forEach(function(item){
+
+    grandTotal += item.total;
+
+    totalGST += (item.total * item.gst) / 100;
+
+});
+
+function renderA4Invoice(bill){
+
 let html = `
 
 <div class="card invoice">
@@ -272,7 +285,7 @@ let html = `
 
 <td><strong>Invoice No</strong></td>
 
-<td>${invoiceNumber}</td>
+<td>${bill.billNo}</td>
 
 </tr>
 
@@ -280,7 +293,7 @@ let html = `
 
 <td><strong>Date</strong></td>
 
-<td>${new Date().toLocaleString()}</td>
+<td>${bill.date}</td>
 
 </tr>
 
@@ -288,7 +301,7 @@ let html = `
 
 <td><strong>Customer</strong></td>
 
-<td>${customerName === "" ? "Walk-in Customer" : customerName}</td>
+<td>${bill.customerName}</td>
 
 </tr>
 
@@ -296,7 +309,7 @@ let html = `
 
 <td><strong>Phone</strong></td>
 
-<td>${customerPhone || "-"}</td>
+<td>${bill.customerPhone}</td>
 
 </tr>
 
@@ -304,7 +317,7 @@ let html = `
 
 <td><strong>Payment</strong></td>
 
-<td>${paymentMethod}</td>
+<td>${bill.paymentMethod}</td>
 
 </tr>
 
@@ -312,9 +325,6 @@ let html = `
 
 <br>
     `;
-
-    let grandTotal = 0;
-let totalGST = 0;
 
 html += `
 
@@ -334,7 +344,7 @@ html += `
 
 `;
 
-    billItems.forEach(function(item){
+    bill.items.forEach(function(item){
 
         html += `
 
@@ -352,10 +362,6 @@ html += `
 
 `;
 
-                grandTotal += item.total;
-
-totalGST += (item.total * item.gst) / 100;
-
     });
 
 html += `
@@ -372,7 +378,7 @@ html += `
 
     <td style="text-align:right;">
 
-        ₹${grandTotal.toFixed(2)}
+        ₹${bill.subtotal.toFixed(2)}
 
     </td>
 
@@ -384,7 +390,7 @@ html += `
 
     <td style="text-align:right;">
 
-        ₹${totalGST.toFixed(2)}
+        ₹${bill.gst.toFixed(2)}
 
     </td>
 
@@ -398,7 +404,7 @@ html += `
 
         <strong>
 
-        ₹${(grandTotal + totalGST).toFixed(2)}
+        ₹${bill.total.toFixed(2)}
 
         </strong>
 
@@ -434,9 +440,105 @@ Powered by <strong>MS ZAMA Dynamics</strong>
 
 `;
 
-    document.getElementById("invoice").innerHTML = renderInvoice({
-    html: html
-});
+    return html;
+
+}
+
+function render58mmReceipt(bill){
+
+    const itemsHtml = bill.items.map(function(item){
+
+        return `
+
+<div style="display:flex;gap:4px;line-height:1.35;">
+
+    <span style="flex:1;min-width:0;word-break:break-word;">${item.name}</span>
+
+    <span style="width:28px;text-align:center;">${item.qty}</span>
+
+    <span style="width:52px;text-align:right;">${item.total}</span>
+
+</div>
+
+`;
+
+    }).join("");
+
+    return `
+
+<div class="thermal-receipt thermal-receipt-58mm" style="width:58mm;max-width:100%;margin:0 auto;font-family:monospace;font-size:11px;line-height:1.35;color:#000;">
+
+    <div style="text-align:center;">
+
+        <strong style="font-size:14px;">${settings.cafeName}</strong><br>
+
+        <span>${settings.address}</span><br>
+
+        <span>Phone: ${settings.phone}</span><br>
+
+        <span>GSTIN: ${settings.gstin}</span>
+
+    </div>
+
+    <div style="border-top:1px dashed #000;margin:7px 0;"></div>
+
+    <div>Invoice No: ${bill.billNo}</div>
+
+    <div>Date: ${bill.date}</div>
+
+    <div>Customer: ${bill.customerName}</div>
+
+    <div>Payment: ${bill.paymentMethod}</div>
+
+    <div style="border-top:1px dashed #000;margin:7px 0 4px;"></div>
+
+    <div style="display:flex;gap:4px;font-weight:bold;">
+
+        <span style="flex:1;">Item</span>
+
+        <span style="width:28px;text-align:center;">Qty</span>
+
+        <span style="width:52px;text-align:right;">Amt</span>
+
+    </div>
+
+    ${itemsHtml}
+
+    <div style="border-top:1px dashed #000;margin:5px 0;"></div>
+
+    <div style="display:flex;"><span style="flex:1;">Subtotal</span><span>&#8377;${bill.subtotal.toFixed(2)}</span></div>
+
+    <div style="display:flex;"><span style="flex:1;">GST</span><span>&#8377;${bill.gst.toFixed(2)}</span></div>
+
+    <div style="display:flex;font-weight:bold;"><span style="flex:1;">Grand Total</span><span>&#8377;${bill.total.toFixed(2)}</span></div>
+
+    <div style="border-top:1px dashed #000;margin:7px 0;"></div>
+
+    <div style="text-align:center;">
+
+        <strong>Thank You</strong><br>
+
+        <span>Visit Again</span><br><br>
+
+        <span>Powered by</span><br>
+
+        <strong>MS ZAMA Dynamics</strong>
+
+    </div>
+
+</div>
+
+`;
+
+}
+
+function render80mmReceipt(bill){
+
+    return render58mmReceipt(bill)
+        .replace("thermal-receipt-58mm", "thermal-receipt-80mm")
+        .replace("width:58mm", "width:80mm");
+
+}
 
     // Now create bill object
 
@@ -467,6 +569,28 @@ const bill = {
     total:grandTotal + totalGST
 
 };
+
+    let renderedInvoice;
+
+    if(settings.printFormat === "A4"){
+
+        renderedInvoice = renderA4Invoice(bill);
+
+    }else if(settings.printFormat === "58mm"){
+
+        renderedInvoice = render58mmReceipt(bill);
+
+    }else if(settings.printFormat === "80mm"){
+
+        renderedInvoice = render80mmReceipt(bill);
+
+    }else{
+
+        renderedInvoice = renderA4Invoice(bill);
+
+    }
+
+    document.getElementById("invoice").innerHTML = renderedInvoice;
 
 saveBillAndAdvanceNumber(bill, billNumber + 1, function(){
 
@@ -530,12 +654,3 @@ function newBill(){
 }
 
 
-/* ==========================================
-   Render Invoice
-========================================== */
-
-function renderInvoice(bill){
-
-    return bill.html;
-
-}

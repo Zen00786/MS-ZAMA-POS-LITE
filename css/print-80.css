@@ -1,0 +1,20 @@
+@import url("print-a4.css");
+
+@page{
+
+    size:80mm auto;
+    margin:2mm;
+
+}
+
+@media print{
+
+    #print-invoice .invoice,
+    #print-invoice .thermal-receipt{
+
+        width:100% !important;
+        max-width:none !important;
+
+    }
+
+}

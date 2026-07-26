@@ -288,6 +288,18 @@ function printOldBill(index){
 
 function printInvoice(invoiceHtml){
 
+    let printStylesheet = "css/print-a4.css";
+
+    if(settings.printFormat === "58mm"){
+
+        printStylesheet = "css/print-58.css";
+
+    }else if(settings.printFormat === "80mm"){
+
+        printStylesheet = "css/print-80.css";
+
+    }
+
     const previousPrintInvoice = document.getElementById("print-invoice");
 
     if(previousPrintInvoice){
@@ -295,6 +307,24 @@ function printInvoice(invoiceHtml){
         previousPrintInvoice.remove();
 
     }
+
+    const previousPrintStylesheet = document.getElementById("temporary-print-stylesheet");
+
+    if(previousPrintStylesheet){
+
+        previousPrintStylesheet.remove();
+
+    }
+
+    const printStylesheetElement = document.createElement("link");
+
+    printStylesheetElement.id = "temporary-print-stylesheet";
+
+    printStylesheetElement.rel = "stylesheet";
+
+    printStylesheetElement.href = printStylesheet;
+
+    document.head.appendChild(printStylesheetElement);
 
     const printInvoiceElement = document.createElement("div");
 
@@ -308,9 +338,29 @@ function printInvoice(invoiceHtml){
 
         printInvoiceElement.remove();
 
+        printStylesheetElement.remove();
+
     }, { once:true });
 
-    window.print();
+    let printStarted = false;
+
+    function startPrint(){
+
+        if(printStarted){
+
+            return;
+
+        }
+
+        printStarted = true;
+
+        window.print();
+
+    }
+
+    printStylesheetElement.addEventListener("load", startPrint, { once:true });
+
+    printStylesheetElement.addEventListener("error", startPrint, { once:true });
 
 }
 
