@@ -40,6 +40,12 @@ body{
     min-height:100vh;
 }
 
+#app[hidden]{
+
+    display:none;
+
+}
+
 
 /* =========================================================
    SIDEBAR
@@ -123,6 +129,38 @@ body{
 .logo p{
 
     color:#cbd5e1;
+
+}
+
+.ms-zama-logo{
+
+    display:block;
+    max-width:115px;
+    max-height:36px;
+    margin:0 auto 10px;
+    object-fit:contain;
+
+}
+
+.sidebar-business-brand{
+
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:16px 20px;
+    border-bottom:1px solid rgba(255,255,255,.1);
+    color:#e2e8f0;
+    font-weight:bold;
+
+}
+
+.sidebar-business-brand img{
+
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    object-fit:contain;
+    background:white;
 
 }
 

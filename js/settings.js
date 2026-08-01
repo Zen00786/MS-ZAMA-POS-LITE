@@ -14,7 +14,13 @@ let settings = {
 
     address : "",
 
-    printFormat : "A4"
+    printFormat : "A4",
+
+    businessLogo : "",
+    licensedTo : "",
+    licenseKey : "",
+    licenseActivated : false,
+    installationId : ""
 
 };
 
@@ -31,6 +37,16 @@ function showSettings(){
         </div>
 
         <div class="card">
+
+            <label><strong>Business Logo</strong></label>
+
+            <br><br>
+
+            <div id="business-logo-preview" class="business-logo-preview"></div>
+
+            <input id="business-logo" type="file" accept="image/png,image/jpeg,image/webp">
+
+            <br><br>
 
             <input id="cafe-name" placeholder="Cafe Name"
             value="${settings.cafeName}">
@@ -113,7 +129,20 @@ function showSettings(){
 
         </div>
 
+        <div class="card about-card">
+
+            <h2>About & License</h2>
+            <p><strong>MS ZAMA POS Lite</strong><br>Version 1.0</p>
+            <p>Licensed to:<br><strong>${settings.licensedTo || "Not activated"}</strong></p>
+            <p>Developed by:<br><strong>MS ZAMA Dynamics</strong></p>
+            <p>License Status:<br><strong>${settings.licenseActivated ? "Activated" : "Not Activated"}</strong></p>
+            <p>Installation ID:<br><code>${settings.installationId || "Preparing..."}</code></p>
+
+        </div>
+
     `;
+
+    renderBusinessLogoPreview();
 
 }
 
@@ -134,14 +163,68 @@ function saveSettings(){
     settings.address =
         document.getElementById("address").value;
 
-        settings.printFormat =
+    settings.printFormat =
     document.getElementById("print-format").value;
 
+    const logoInput = document.getElementById("business-logo");
+    const selectedLogo = logoInput.files[0];
+
+    if(selectedLogo && !["image/png", "image/jpeg", "image/webp"].includes(selectedLogo.type)){
+
+        alert("Please choose a PNG, JPG, or WEBP image.");
+
+        return;
+
+    }
+
+    if(selectedLogo){
+
+        const reader = new FileReader();
+
+        reader.onload = function(){
+
+            settings.businessLogo = reader.result;
+            persistSettings();
+
+        };
+
+        reader.onerror = function(){
+
+            alert("Unable to read the selected business logo.");
+
+        };
+
+        reader.readAsDataURL(selectedLogo);
+
+        return;
+
+    }
+
+    persistSettings();
+
+}
+
+function persistSettings(){
+
     saveSettingsDB(settings, function(){
+
+        updateClientBranding();
 
         alert("Settings Saved");
 
     });
+
+}
+
+function renderBusinessLogoPreview(){
+
+    const preview = document.getElementById("business-logo-preview");
+
+    if(settings.businessLogo){
+
+        preview.innerHTML = `<img src="${settings.businessLogo}" alt="Business logo">`;
+
+    }
 
 }
 

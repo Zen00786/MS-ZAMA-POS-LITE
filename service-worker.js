@@ -1,4 +1,4 @@
-const CACHE_NAME = "ms-zama-pos-lite-v3";
+const CACHE_NAME = "ms-zama-pos-lite-v5";
 
 const APP_SHELL = [
     "./",
@@ -19,7 +19,8 @@ const APP_SHELL = [
     "./js/reports.js",
     "./js/settings.js",
     "./js/app.js",
-    "./assets/icons/zpos-icon.svg"
+    "./assets/icons/zpos-icon.svg",
+    "./assets/ms-zama-logo.png"
 ];
 
 self.addEventListener("install", function(event){

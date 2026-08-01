@@ -91,6 +91,117 @@ button:hover{
 
 }
 
+.business-logo-preview{
+
+    min-height:0;
+    margin-bottom:12px;
+
+}
+
+.business-logo-preview img{
+
+    display:block;
+    width:72px;
+    height:72px;
+    object-fit:contain;
+    border:1px solid #ddd;
+    border-radius:8px;
+
+}
+
+.about-card{
+
+    margin-top:25px;
+
+}
+
+.about-card p{
+
+    margin-top:16px;
+    line-height:1.5;
+
+}
+
+.about-card code,
+.installation-id code{
+
+    word-break:break-all;
+
+}
+
+.activation-screen{
+
+    display:flex;
+    min-height:100vh;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    background:#f5f7fa;
+
+}
+
+.activation-screen[hidden]{
+
+    display:none;
+
+}
+
+.activation-card{
+
+    width:min(100%, 420px);
+    padding:32px;
+    background:white;
+    border-radius:12px;
+    box-shadow:0 8px 24px rgba(0,0,0,.12);
+
+}
+
+.activation-card h1{
+
+    margin-bottom:10px;
+
+}
+
+.activation-card p{
+
+    margin-bottom:24px;
+    color:#555;
+    line-height:1.5;
+
+}
+
+.activation-card label{
+
+    display:block;
+    margin:16px 0 8px;
+    font-weight:bold;
+
+}
+
+.activation-card button{
+
+    width:100%;
+    margin-top:24px;
+
+}
+
+.activation-card .installation-id{
+
+    margin:20px 0 0;
+    font-size:12px;
+
+}
+
+.activation-logo{
+
+    display:block;
+    max-width:150px;
+    max-height:52px;
+    object-fit:contain;
+    margin:0 0 18px;
+
+}
+
 
 /* ==========================================
    Bill Table

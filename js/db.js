@@ -76,9 +76,14 @@ console.log("Database Connected");
 
 loadProducts();
 loadBills();
-loadSettings();
 loadBillNumber();
 loadHeldBills();
+
+loadSettings(function(){
+    ensureInstallationId(function(){
+        initializeApplication();
+    });
+});
 
 };
 
@@ -320,7 +325,7 @@ function saveSettingsDB(settings, onComplete){
    Load Settings
 ========================================== */
 
-function loadSettings(){
+function loadSettings(onLoaded){
 
     const transaction =
         db.transaction(["settings"],"readonly");
@@ -335,13 +340,20 @@ function loadSettings(){
 
         if(request.result){
 
-            settings = request.result;
+            settings = {
+                ...settings,
+                ...request.result
+            };
 
         }
         else{
 
             saveSettingsDB(settings);
 
+        }
+
+        if(onLoaded){
+            onLoaded(settings);
         }
 
     };
@@ -629,6 +641,12 @@ function importBackupData(backup, onSuccess, onError){
 
     const storeNames = ["products", "bills", "settings", "counters", "heldBills"];
     const transaction = db.transaction(storeNames, "readwrite");
+    const protectedLicense = {
+        licenseActivated: settings.licenseActivated === true,
+        licenseKey: settings.licenseKey || "",
+        licensedTo: settings.licensedTo || "",
+        installationId: settings.installationId || ""
+    };
     let completed = false;
     let failed = false;
 
@@ -640,11 +658,24 @@ function importBackupData(backup, onSuccess, onError){
 
         backup.data[storeName].forEach(function(record){
 
+            if(storeName === "settings"){
+                record = { ...record, ...protectedLicense };
+            }
+
             store.put(record);
 
         });
 
     });
+
+    if(backup.data.settings.length === 0){
+
+        transaction.objectStore("settings").put({
+            id: 1,
+            ...protectedLicense
+        });
+
+    }
 
     transaction.oncomplete = function(){
 
