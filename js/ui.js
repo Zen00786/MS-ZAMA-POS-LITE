@@ -20,6 +20,49 @@ function setActiveMenu(menuId){
 
 const content = document.getElementById("content");
 
+/* Phone navigation drawer. Desktop navigation remains unchanged. */
+const sidebar = document.getElementById("sidebar");
+const sidebarToggle = document.getElementById("sidebar-toggle");
+const sidebarBackdrop = document.getElementById("sidebar-backdrop");
+const appContainer = document.getElementById("app");
+
+function setSidebarOpen(isOpen){
+
+    appContainer.classList.toggle("sidebar-open", isOpen);
+    document.body.classList.toggle("sidebar-open", isOpen);
+    sidebarToggle.setAttribute("aria-expanded", String(isOpen));
+    sidebarToggle.setAttribute("aria-label", isOpen ? "Close navigation menu" : "Open navigation menu");
+
+}
+
+sidebarToggle.onclick = function(){
+
+    setSidebarOpen(!appContainer.classList.contains("sidebar-open"));
+
+};
+
+sidebarBackdrop.onclick = function(){
+
+    setSidebarOpen(false);
+
+};
+
+sidebar.onclick = function(event){
+
+    if(event.target.closest("li")){
+        setSidebarOpen(false);
+    }
+
+};
+
+document.addEventListener("keydown", function(event){
+
+    if(event.key === "Escape"){
+        setSidebarOpen(false);
+    }
+
+});
+
 
 
 
