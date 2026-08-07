@@ -41,8 +41,6 @@
     #invoice{
 
         display:block !important;
-        position:fixed !important;
-        inset:0 !important;
         width:100% !important;
         height:auto !important;
         overflow:visible !important;
