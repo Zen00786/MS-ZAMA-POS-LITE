@@ -8,17 +8,10 @@
 
 }
 
-#print-invoice{
-
-    display:none;
-
-}
-
 @media print{
 
     html,
-    body,
-    #print-invoice{
+    body{
 
         display:block !important;
         width:100% !important;
@@ -27,93 +20,76 @@
         overflow:visible !important;
         margin:0 !important;
         padding:0 !important;
+        background:#fff !important;
 
     }
 
-    #app{
+    /* #invoice is inside #app, so hiding #app with display:none would also hide the receipt. */
+    body > *{
 
-        display:none !important;
-
-    }
-
-    body{
-
-        background:#fff;
+        visibility:hidden !important;
 
     }
 
-    #sidebar,
-    #header,
-    button,
-    input,
-    select,
-    textarea,
-    .page-title{
+    #invoice,
+    #invoice *{
 
-        display:none !important;
+        visibility:visible !important;
 
     }
 
-    #print-invoice{
+    #invoice{
 
         display:block !important;
-
-        width:100%;
-
-        margin:0;
-
-        padding:0;
-
-    }
-
-    #print-invoice .invoice{
-
-        display:block !important;
-
-        width:100%;
+        position:fixed !important;
+        inset:0 !important;
+        width:100% !important;
+        height:auto !important;
+        overflow:visible !important;
         margin:0 !important;
+        padding:0 !important;
 
     }
 
-    .invoice{
+    #invoice .invoice,
+    #invoice .thermal-receipt{
 
+        display:block !important;
+        width:100% !important;
+        max-width:none !important;
+        margin:0 !important;
+        padding:0 !important;
+        border:none;
         box-shadow:none;
 
-        border:none;
-
-        width:100%;
-        max-width:none;
-        margin:0;
-        padding:0;
-
     }
 
-    .bill-table{
+    #invoice .bill-table{
 
-        width:100%;
-
+        display:table !important;
+        width:100% !important;
+        overflow:visible !important;
         border-collapse:collapse;
         page-break-inside:auto;
 
     }
 
-    .bill-table th,
-    .bill-table td{
+    #invoice .bill-table th,
+    #invoice .bill-table td{
 
         border:1px solid #000;
-
         padding:8px;
 
     }
 
-    .bill-table tr{
+    #invoice .bill-table tr{
 
         break-inside:avoid;
         page-break-inside:avoid;
 
     }
 
-    .bill-table thead{
+    #invoice .bill-table thead{
 
         display:table-header-group;
 

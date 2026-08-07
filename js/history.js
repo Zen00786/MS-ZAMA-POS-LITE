@@ -288,95 +288,20 @@ function printOldBill(index){
 
 function printInvoice(invoiceHtml){
 
-    let printStylesheet = "css/print-a4.css";
+    const invoice = document.getElementById("invoice");
 
-    if(settings.printFormat === "58mm"){
-
-        printStylesheet = "css/print-58.css";
-
-    }else if(settings.printFormat === "80mm"){
-
-        printStylesheet = "css/print-80.css";
-
-    }
-
-    const printWindow = window.open("", "_blank", "width=900,height=700");
-
-    if(!printWindow){
-
-        alert("Unable to open the print window. Please allow pop-ups and try again.");
+    if(!invoice){
 
         return;
 
     }
 
-    const stylesheetBase = new URL("css/", window.location.href).href;
-    const printStylesheetUrl = new URL(printStylesheet, window.location.href).href;
+    document.getElementById("print-58-stylesheet").disabled = settings.printFormat !== "58mm";
+    document.getElementById("print-80-stylesheet").disabled = settings.printFormat !== "80mm";
 
-    printWindow.document.open();
+    invoice.innerHTML = invoiceHtml;
 
-    printWindow.document.write(`
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-
-    <meta charset="UTF-8">
-    <base href="${window.location.href}">
-    <link rel="stylesheet" href="${stylesheetBase}style.css">
-    <link rel="stylesheet" href="${stylesheetBase}layout.css">
-    <link rel="stylesheet" href="${stylesheetBase}components.css">
-    <link rel="stylesheet" href="${stylesheetBase}pages.css">
-    <link id="temporary-print-stylesheet" rel="stylesheet" href="${printStylesheetUrl}">
-
-</head>
-<body id="print-invoice">${invoiceHtml}</body>
-</html>
-
-`);
-
-    const printStylesheetElement = printWindow.document.getElementById("temporary-print-stylesheet");
-
-    let printStarted = false;
-    let printWindowClosed = false;
-
-    function closePrintWindow(){
-
-        if(printWindowClosed){
-
-            return;
-
-        }
-
-        printWindowClosed = true;
-
-        printWindow.close();
-
-    }
-
-    function startPrint(){
-
-        if(printStarted){
-
-            return;
-
-        }
-
-        printStarted = true;
-
-        printWindow.focus();
-
-        printWindow.print();
-
-    }
-
-    printWindow.addEventListener("afterprint", closePrintWindow, { once:true });
-
-    printWindow.addEventListener("load", startPrint, { once:true });
-
-    printStylesheetElement.addEventListener("error", startPrint, { once:true });
-
-    printWindow.document.close();
+    window.print();
 
 }
 
