@@ -300,49 +300,59 @@ function printInvoice(invoiceHtml){
 
     }
 
-    const previousPrintInvoice = document.getElementById("print-invoice");
+    const printWindow = window.open("", "_blank", "width=900,height=700");
 
-    if(previousPrintInvoice){
+    if(!printWindow){
 
-        previousPrintInvoice.remove();
+        alert("Unable to open the print window. Please allow pop-ups and try again.");
 
-    }
-
-    const previousPrintStylesheet = document.getElementById("temporary-print-stylesheet");
-
-    if(previousPrintStylesheet){
-
-        previousPrintStylesheet.remove();
+        return;
 
     }
 
-    const printStylesheetElement = document.createElement("link");
+    const stylesheetBase = new URL("css/", window.location.href).href;
+    const printStylesheetUrl = new URL(printStylesheet, window.location.href).href;
 
-    printStylesheetElement.id = "temporary-print-stylesheet";
+    printWindow.document.open();
 
-    printStylesheetElement.rel = "stylesheet";
+    printWindow.document.write(`
 
-    printStylesheetElement.href = printStylesheet;
+<!DOCTYPE html>
+<html lang="en">
+<head>
 
-    document.head.appendChild(printStylesheetElement);
+    <meta charset="UTF-8">
+    <base href="${window.location.href}">
+    <link rel="stylesheet" href="${stylesheetBase}style.css">
+    <link rel="stylesheet" href="${stylesheetBase}layout.css">
+    <link rel="stylesheet" href="${stylesheetBase}components.css">
+    <link rel="stylesheet" href="${stylesheetBase}pages.css">
+    <link id="temporary-print-stylesheet" rel="stylesheet" href="${printStylesheetUrl}">
 
-    const printInvoiceElement = document.createElement("div");
+</head>
+<body id="print-invoice">${invoiceHtml}</body>
+</html>
 
-    printInvoiceElement.id = "print-invoice";
+`);
 
-    printInvoiceElement.innerHTML = invoiceHtml;
-
-    document.body.appendChild(printInvoiceElement);
-
-    window.addEventListener("afterprint", function(){
-
-        printInvoiceElement.remove();
-
-        printStylesheetElement.remove();
-
-    }, { once:true });
+    const printStylesheetElement = printWindow.document.getElementById("temporary-print-stylesheet");
 
     let printStarted = false;
+    let printWindowClosed = false;
+
+    function closePrintWindow(){
+
+        if(printWindowClosed){
+
+            return;
+
+        }
+
+        printWindowClosed = true;
+
+        printWindow.close();
+
+    }
 
     function startPrint(){
 
@@ -354,13 +364,19 @@ function printInvoice(invoiceHtml){
 
         printStarted = true;
 
-        window.print();
+        printWindow.focus();
+
+        printWindow.print();
 
     }
 
-    printStylesheetElement.addEventListener("load", startPrint, { once:true });
+    printWindow.addEventListener("afterprint", closePrintWindow, { once:true });
+
+    printWindow.addEventListener("load", startPrint, { once:true });
 
     printStylesheetElement.addEventListener("error", startPrint, { once:true });
+
+    printWindow.document.close();
 
 }
 
