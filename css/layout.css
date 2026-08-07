@@ -53,6 +53,13 @@ body{
 
 }
 
+.billing-product-search,
+.billing-product-results{
+
+    display:none;
+
+}
+
 
 /* =========================================================
    SIDEBAR
@@ -246,6 +253,14 @@ nav li.active{
 
 }
 
+.dashboard-grid{
+
+    grid-template-columns:1fr;
+
+}
+
+}
+
 
 /* =========================================================
    PHONE LAYOUT
@@ -402,12 +417,40 @@ nav li.active{
     .invoice{
         margin:0;
     }
-}
+    .billing-product-search{
+        display:block;
+        margin:0 0 10px;
+    }
 
-.dashboard-grid{
+    .billing-product-results{
+        display:grid;
+        gap:8px;
+        max-height:192px;
+        margin:0 0 18px;
+        overflow-y:auto;
+        -webkit-overflow-scrolling:touch;
+    }
 
-    grid-template-columns:1fr;
+    .billing-product-option{
+        width:100%;
+        min-height:48px;
+        padding:12px 14px;
+        color:#1e293b;
+        text-align:left;
+        background:#f8fafc;
+        border:1px solid #d6dce5;
+        border-radius:8px;
+    }
 
-}
+    #bill-product{
+        display:none;
+    }
 
+    .billing-product-label{
+        display:none;
+    }
+
+    .billing-card #bill-items{
+        width:100%;
+    }
 }

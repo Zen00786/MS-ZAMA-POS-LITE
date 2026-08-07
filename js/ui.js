@@ -229,6 +229,10 @@ loadProducts(displayProducts);
 
 function showBilling(){
 
+    if(window.matchMedia("(max-width: 767px)").matches){
+        setSidebarOpen(false);
+    }
+
     content.innerHTML = `
 
         <div class="page-title">
@@ -239,7 +243,7 @@ function showBilling(){
 
         </div>
 
-        <div class="card">
+        <div class="card billing-card">
 
             <h2>Billing</h2>
 
@@ -275,9 +279,18 @@ function showBilling(){
 
             <br>
 
-            Product
+            <span class="billing-product-label">Product<br><br></span>
 
-            <br><br>
+<input
+    id="bill-product-search"
+    class="billing-product-search"
+    type="search"
+    placeholder="🔍 Search products..."
+    autocomplete="off"
+    aria-label="Search products"
+>
+
+<div id="bill-product-results" class="billing-product-results" role="listbox" aria-label="Product results"></div>
 
             <select id="bill-product">
 
@@ -379,10 +392,56 @@ function showBilling(){
     loadProducts(function(){
 
         loadProductsDropdown();
+        setupBillingProductSearch();
 
     });
 
     renderHeldBills();
+
+}
+
+/* Mobile product search only updates the existing billing selector. */
+function setupBillingProductSearch(){
+
+    const search = document.getElementById("bill-product-search");
+    const results = document.getElementById("bill-product-results");
+    const dropdown = document.getElementById("bill-product");
+
+    if(!search || !results || !dropdown){
+        return;
+    }
+
+    function renderProductResults(){
+
+        const keyword = search.value.trim().toLowerCase();
+        const matchingProducts = products.filter(function(product){
+            return product.name.toLowerCase().includes(keyword);
+        });
+
+        results.innerHTML = "";
+
+        matchingProducts.forEach(function(product){
+
+            const option = document.createElement("button");
+            option.type = "button";
+            option.className = "billing-product-option";
+            option.setAttribute("role", "option");
+            option.textContent = product.name;
+
+            option.onclick = function(){
+                dropdown.value = product.name;
+                search.value = product.name;
+                renderProductResults();
+            };
+
+            results.appendChild(option);
+
+        });
+
+    }
+
+    search.addEventListener("input", renderProductResults);
+    renderProductResults();
 
 }
 
