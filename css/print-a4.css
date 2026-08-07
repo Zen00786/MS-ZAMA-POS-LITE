@@ -24,17 +24,42 @@
 
     }
 
-    /* #invoice is inside #app, so hiding #app with display:none would also hide the receipt. */
-    body > *{
+    /* Keep only the invoice's ancestor path in print layout. */
+    body > :not(#app),
+    #sidebar,
+    #header,
+    #sidebar-toggle,
+    #sidebar-backdrop,
+    #content > :not(.billing-card),
+    .billing-card > :not(#invoice-container){
 
-        visibility:hidden !important;
+        display:none !important;
 
     }
 
-    #invoice,
-    #invoice *{
+    #app,
+    #main,
+    #content,
+    .billing-card,
+    #invoice-container{
 
-        visibility:visible !important;
+        display:block !important;
+        width:100% !important;
+        min-height:0 !important;
+        height:auto !important;
+        overflow:visible !important;
+        margin:0 !important;
+        padding:0 !important;
+
+    }
+
+    /* Text nodes around the invoice remain in the billing card but occupy no print space. */
+    .billing-card{
+
+        font-size:0 !important;
+        line-height:0 !important;
+        background:transparent !important;
+        box-shadow:none !important;
 
     }
 
@@ -46,11 +71,12 @@
         overflow:visible !important;
         margin:0 !important;
         padding:0 !important;
+        font-size:initial !important;
+        line-height:normal !important;
 
     }
 
-    #invoice .invoice,
-    #invoice .thermal-receipt{
+    #invoice .invoice{
 
         display:block !important;
         width:100% !important;

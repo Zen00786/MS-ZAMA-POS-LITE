@@ -4,15 +4,3 @@
     margin:2mm;
 
 }
-
-@media print{
-
-    #invoice .invoice,
-    #invoice .thermal-receipt{
-
-        width:100% !important;
-        max-width:none !important;
-
-    }
-
-}
