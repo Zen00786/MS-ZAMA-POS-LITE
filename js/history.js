@@ -278,7 +278,15 @@ function printOldBill(index){
 
     if(!bill) return;
 
-    printInvoice(renderSavedInvoice(bill));
+    if(settings.printFormat === "58mm" || settings.printFormat === "80mm"){
+
+        printInvoice(renderThermalReceipt(bill, settings.printFormat), settings.printFormat);
+
+        return;
+
+    }
+
+    printInvoice(renderSavedInvoice(bill), "A4");
 
 }
 
@@ -286,22 +294,24 @@ function printOldBill(index){
    Shared Invoice Printing
 ========================================== */
 
-function printInvoice(invoiceHtml){
+function printInvoice(invoiceHtml, format){
 
-    const invoice = document.getElementById("invoice");
+    const printHost = document.getElementById("print-host");
 
-    if(!invoice){
+    if(!printHost){
 
         return;
 
     }
 
-    document.getElementById("print-58-stylesheet").disabled = settings.printFormat !== "58mm";
-    document.getElementById("print-80-stylesheet").disabled = settings.printFormat !== "80mm";
+    const printFormat = format || settings.printFormat;
+    document.getElementById("print-58-stylesheet").disabled = printFormat !== "58mm";
+    document.getElementById("print-80-stylesheet").disabled = printFormat !== "80mm";
 
-    invoice.innerHTML = invoiceHtml;
+    document.body.classList.toggle("thermal-print", printFormat === "58mm" || printFormat === "80mm");
+    printHost.innerHTML = invoiceHtml;
 
-    window.print();
+    requestAnimationFrame(function(){ window.print(); });
 
 }
 

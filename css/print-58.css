@@ -4,3 +4,56 @@
     margin:2mm;
 
 }
+
+@media print{
+    body.thermal-print #print-host{
+        width:54mm !important;
+        margin:0 !important;
+        padding:0 !important;
+    }
+
+    body.thermal-print .thermal-receipt{
+        width:54mm !important;
+        margin:0 !important;
+        padding:0 !important;
+        color:#000 !important;
+        background:#fff !important;
+        font-family:"Courier New", Courier, monospace !important;
+        font-size:9px !important;
+        font-weight:400 !important;
+        font-style:normal !important;
+        line-height:1.25 !important;
+        letter-spacing:normal !important;
+        word-spacing:normal !important;
+        text-transform:none !important;
+    }
+
+    body.thermal-print .receipt-business,
+    body.thermal-print .receipt-footer{ text-align:center; }
+    body.thermal-print .receipt-business > *,
+    body.thermal-print .receipt-footer > *{ display:block; margin:0; padding:0; }
+    body.thermal-print .receipt-business strong{ font-size:11px; }
+    body.thermal-print .receipt-rule{ border-top:1px dashed #000; height:0; margin:4px 0; }
+    body.thermal-print .receipt-meta{ margin:0 0 2px; overflow-wrap:anywhere; }
+    body.thermal-print .receipt-meta span{ display:block; }
+    body.thermal-print .receipt-items,
+    body.thermal-print .receipt-totals{ width:100% !important; border-collapse:collapse !important; border-spacing:0 !important; table-layout:fixed !important; }
+    body.thermal-print .receipt-item-col{ width:65%; }
+    body.thermal-print .receipt-qty-col{ width:13%; }
+    body.thermal-print .receipt-amount-col{ width:22%; }
+    body.thermal-print .receipt-items th,
+    body.thermal-print .receipt-items td,
+    body.thermal-print .receipt-totals th,
+    body.thermal-print .receipt-totals td{ border:0 !important; padding:1px 0 !important; vertical-align:top; }
+    body.thermal-print .receipt-items th{ text-align:left; font-weight:bold; }
+    body.thermal-print .receipt-items th:nth-child(2),
+    body.thermal-print .receipt-qty{ text-align:center; white-space:nowrap; }
+    body.thermal-print .receipt-items th:nth-child(3),
+    body.thermal-print .receipt-amount,
+    body.thermal-print .receipt-totals td{ text-align:right; white-space:nowrap; }
+    body.thermal-print .receipt-item-name{ overflow-wrap:break-word; word-break:normal; padding-right:2px !important; }
+    body.thermal-print .receipt-totals th{ text-align:left; font-weight:normal; }
+    body.thermal-print .receipt-grand-total th,
+    body.thermal-print .receipt-grand-total td{ font-weight:bold; }
+    body.thermal-print .receipt-footer{ margin:0; }
+}
