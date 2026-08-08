@@ -8,6 +8,113 @@ let billNumber = 1;
 let billNumberLoaded = false;
 let isGeneratingBill = false;
 
+/* ==========================================
+   Shared POS Receipt
+   The original 58mm receipt is the master markup for every paper size.
+========================================== */
+
+function render58mmReceipt(bill, printFormat){
+
+    const format = printFormat || "58mm";
+    const receiptClass =
+        format === "80mm"
+        ? "thermal-receipt-80mm"
+        : format === "A4"
+        ? "thermal-receipt-a4"
+        : "thermal-receipt-58mm";
+    const receiptWidth =
+        format === "80mm"
+        ? "80mm"
+        : format === "A4"
+        ? "210mm"
+        : "58mm";
+
+    const itemsHtml = bill.items.map(function(item){
+
+        return `
+
+<div style="display:flex;gap:4px;line-height:1.35;">
+
+    <span style="flex:1;min-width:0;word-break:break-word;">${item.name}</span>
+
+    <span style="width:28px;text-align:center;">${item.qty}</span>
+
+    <span style="width:52px;text-align:right;">${item.total}</span>
+
+</div>
+
+`;
+
+    }).join("");
+
+    return `
+
+<div class="thermal-receipt ${receiptClass}" style="width:${receiptWidth};max-width:100%;margin:0 auto;font-family:monospace;font-size:11px;line-height:1.35;color:#000;">
+
+    <div style="text-align:center;">
+
+        <strong style="font-size:14px;">${settings.cafeName}</strong><br>
+
+        <span>${settings.address}</span><br>
+
+        <span>Phone: ${settings.phone}</span><br>
+
+        <span>GSTIN: ${settings.gstin}</span>
+
+    </div>
+
+    <div style="border-top:1px dashed #000;margin:7px 0;"></div>
+
+    <div>Invoice No: ${bill.billNo}</div>
+
+    <div>Date: ${bill.date}</div>
+
+    <div>Customer: ${bill.customerName}</div>
+
+    <div>Payment: ${bill.paymentMethod}</div>
+
+    <div style="border-top:1px dashed #000;margin:7px 0 4px;"></div>
+
+    <div style="display:flex;gap:4px;font-weight:bold;">
+
+        <span style="flex:1;">Item</span>
+
+        <span style="width:28px;text-align:center;">Qty</span>
+
+        <span style="width:52px;text-align:right;">Amt</span>
+
+    </div>
+
+    ${itemsHtml}
+
+    <div style="border-top:1px dashed #000;margin:5px 0;"></div>
+
+    <div style="display:flex;"><span style="flex:1;">Subtotal</span><span>&#8377;${bill.subtotal.toFixed(2)}</span></div>
+
+    <div style="display:flex;"><span style="flex:1;">GST</span><span>&#8377;${bill.gst.toFixed(2)}</span></div>
+
+    <div style="display:flex;font-weight:bold;"><span style="flex:1;">Grand Total</span><span>&#8377;${bill.total.toFixed(2)}</span></div>
+
+    <div style="border-top:1px dashed #000;margin:7px 0;"></div>
+
+    <div style="text-align:center;">
+
+        <strong>Thank You</strong><br>
+
+        <span>Visit Again</span><br><br>
+
+        <span>Powered by</span><br>
+
+        <strong>MS ZAMA Dynamics</strong>
+
+    </div>
+
+</div>
+
+`;
+
+}
+
 function setBillNumber(nextBillNumber){
 
     billNumber = nextBillNumber;
@@ -445,102 +552,6 @@ Powered by <strong>MS ZAMA Dynamics</strong>
 
 }
 
-function render58mmReceipt(bill){
-
-    const itemsHtml = bill.items.map(function(item){
-
-        return `
-
-<div style="display:flex;gap:4px;line-height:1.35;">
-
-    <span style="flex:1;min-width:0;word-break:break-word;">${item.name}</span>
-
-    <span style="width:28px;text-align:center;">${item.qty}</span>
-
-    <span style="width:52px;text-align:right;">${item.total}</span>
-
-</div>
-
-`;
-
-    }).join("");
-
-    return `
-
-<div class="thermal-receipt thermal-receipt-58mm" style="width:58mm;max-width:100%;margin:0 auto;font-family:monospace;font-size:11px;line-height:1.35;color:#000;">
-
-    <div style="text-align:center;">
-
-        <strong style="font-size:14px;">${settings.cafeName}</strong><br>
-
-        <span>${settings.address}</span><br>
-
-        <span>Phone: ${settings.phone}</span><br>
-
-        <span>GSTIN: ${settings.gstin}</span>
-
-    </div>
-
-    <div style="border-top:1px dashed #000;margin:7px 0;"></div>
-
-    <div>Invoice No: ${bill.billNo}</div>
-
-    <div>Date: ${bill.date}</div>
-
-    <div>Customer: ${bill.customerName}</div>
-
-    <div>Payment: ${bill.paymentMethod}</div>
-
-    <div style="border-top:1px dashed #000;margin:7px 0 4px;"></div>
-
-    <div style="display:flex;gap:4px;font-weight:bold;">
-
-        <span style="flex:1;">Item</span>
-
-        <span style="width:28px;text-align:center;">Qty</span>
-
-        <span style="width:52px;text-align:right;">Amt</span>
-
-    </div>
-
-    ${itemsHtml}
-
-    <div style="border-top:1px dashed #000;margin:5px 0;"></div>
-
-    <div style="display:flex;"><span style="flex:1;">Subtotal</span><span>&#8377;${bill.subtotal.toFixed(2)}</span></div>
-
-    <div style="display:flex;"><span style="flex:1;">GST</span><span>&#8377;${bill.gst.toFixed(2)}</span></div>
-
-    <div style="display:flex;font-weight:bold;"><span style="flex:1;">Grand Total</span><span>&#8377;${bill.total.toFixed(2)}</span></div>
-
-    <div style="border-top:1px dashed #000;margin:7px 0;"></div>
-
-    <div style="text-align:center;">
-
-        <strong>Thank You</strong><br>
-
-        <span>Visit Again</span><br><br>
-
-        <span>Powered by</span><br>
-
-        <strong>MS ZAMA Dynamics</strong>
-
-    </div>
-
-</div>
-
-`;
-
-}
-
-function render80mmReceipt(bill){
-
-    return render58mmReceipt(bill)
-        .replace("thermal-receipt-58mm", "thermal-receipt-80mm")
-        .replace("width:58mm", "width:80mm");
-
-}
-
     // Now create bill object
 
 const bill = {
@@ -575,19 +586,19 @@ const bill = {
 
     if(settings.printFormat === "A4"){
 
-        renderedInvoice = renderA4Invoice(bill);
+        renderedInvoice = render58mmReceipt(bill, "A4");
 
     }else if(settings.printFormat === "58mm"){
 
-        renderedInvoice = render58mmReceipt(bill);
+        renderedInvoice = render58mmReceipt(bill, "58mm");
 
     }else if(settings.printFormat === "80mm"){
 
-        renderedInvoice = render80mmReceipt(bill);
+        renderedInvoice = render58mmReceipt(bill, "80mm");
 
     }else{
 
-        renderedInvoice = renderA4Invoice(bill);
+        renderedInvoice = render58mmReceipt(bill, "A4");
 
     }
 

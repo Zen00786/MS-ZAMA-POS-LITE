@@ -88,6 +88,23 @@
 
     }
 
+    /* A4 uses the same POS receipt markup; only its available paper width changes. */
+    #invoice .thermal-receipt-a4{
+
+        width:120mm !important;
+        max-width:100% !important;
+        margin:0 auto !important;
+        font-size:13px !important;
+        line-height:1.45 !important;
+
+    }
+
+    #invoice .thermal-receipt-a4 strong[style]{
+
+        font-size:17px !important;
+
+    }
+
     #invoice .bill-table{
 
         display:table !important;

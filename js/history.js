@@ -50,6 +50,16 @@ function renderBillHistory(){
 
     });
 
+    html += `
+
+        <div class="billing-card" style="display:none;">
+            <div id="invoice-container">
+                <div id="invoice"></div>
+            </div>
+        </div>
+
+    `;
+
     content.innerHTML = html;
 
 }
@@ -278,7 +288,7 @@ function printOldBill(index){
 
     if(!bill) return;
 
-    printInvoice(renderSavedInvoice(bill));
+    printInvoice(render58mmReceipt(bill, settings.printFormat));
 
 }
 
