@@ -811,6 +811,12 @@ function newBill(){
 
     document.getElementById("invoice").innerHTML = "";
 
+    document.getElementById("customer-name").value = "";
+
+    document.getElementById("customer-phone").value = "";
+
+    document.getElementById("payment-method").selectedIndex = 0;
+
     document.getElementById("bill-product").selectedIndex = 0;
 
     document.getElementById("bill-qty").value = 1;
