@@ -4,9 +4,3 @@
     margin:2mm;
 
 }
-
-@media print{
-    body.thermal-print #print-host,
-    body.thermal-print .thermal-receipt-80mm{ width:76mm !important; }
-    body.thermal-print .thermal-receipt-80mm{ font-size:10px !important; }
-}

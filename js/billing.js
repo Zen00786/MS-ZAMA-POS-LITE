@@ -7,73 +7,6 @@ let heldBills = [];
 let billNumber = 1;
 let billNumberLoaded = false;
 let isGeneratingBill = false;
-let currentGeneratedBill = null;
-
-/* ==========================================
-   Thermal receipt rendering
-   A table is deliberate here: Android print drivers handle fixed table columns
-   far more consistently than flex layouts on narrow paper.
-========================================== */
-
-function receiptEscape(value){
-
-    return String(value == null ? "" : value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-
-}
-
-function receiptMoney(value){
-
-    return Number(value || 0).toFixed(2);
-
-}
-
-function renderThermalReceipt(bill, paperWidth){
-
-    const widthClass = paperWidth === "80mm" ? "thermal-receipt-80mm" : "thermal-receipt-58mm";
-    const items = (bill.items || []).map(function(item){
-
-        return `<tr>
-            <td class="receipt-item-name">${receiptEscape(item.name)}</td>
-            <td class="receipt-qty">${receiptEscape(item.qty)}</td>
-            <td class="receipt-amount">${receiptMoney(item.total)}</td>
-        </tr>`;
-
-    }).join("");
-
-    return `<section class="thermal-receipt ${widthClass}">
-        <header class="receipt-business">
-            <strong>${receiptEscape(settings.cafeName)}</strong>
-            <span>${receiptEscape(settings.address)}</span>
-            <span>Phone: ${receiptEscape(settings.phone)}</span>
-            <span>GSTIN: ${receiptEscape(settings.gstin)}</span>
-        </header>
-        <div class="receipt-rule"></div>
-        <div class="receipt-meta"><span>Bill: ${receiptEscape(bill.billNo)}</span><span>${receiptEscape(bill.date)}</span></div>
-        <div class="receipt-meta"><span>Customer: ${receiptEscape(bill.customerName)}</span><span>Pay: ${receiptEscape(bill.paymentMethod)}</span></div>
-        <div class="receipt-rule"></div>
-        <table class="receipt-items">
-            <colgroup><col class="receipt-item-col"><col class="receipt-qty-col"><col class="receipt-amount-col"></colgroup>
-            <thead><tr><th>Item</th><th>Qty</th><th>Amt</th></tr></thead>
-            <tbody>${items}</tbody>
-        </table>
-        <div class="receipt-rule"></div>
-        <table class="receipt-totals">
-            <tbody>
-                <tr><th>Subtotal</th><td>${receiptMoney(bill.subtotal)}</td></tr>
-                <tr><th>GST</th><td>${receiptMoney(bill.gst)}</td></tr>
-                <tr class="receipt-grand-total"><th>Grand Total</th><td>${receiptMoney(bill.total)}</td></tr>
-            </tbody>
-        </table>
-        <div class="receipt-rule"></div>
-        <footer class="receipt-footer"><strong>Thank You</strong><span>Please Visit Again</span><span>Powered by</span><strong>MS ZAMA Dynamics</strong></footer>
-    </section>`;
-
-}
 
 function setBillNumber(nextBillNumber){
 
@@ -512,6 +445,102 @@ Powered by <strong>MS ZAMA Dynamics</strong>
 
 }
 
+function render58mmReceipt(bill){
+
+    const itemsHtml = bill.items.map(function(item){
+
+        return `
+
+<div style="display:flex;gap:4px;line-height:1.35;">
+
+    <span style="flex:1;min-width:0;word-break:break-word;">${item.name}</span>
+
+    <span style="width:28px;text-align:center;">${item.qty}</span>
+
+    <span style="width:52px;text-align:right;">${item.total}</span>
+
+</div>
+
+`;
+
+    }).join("");
+
+    return `
+
+<div class="thermal-receipt thermal-receipt-58mm" style="width:58mm;max-width:100%;margin:0 auto;font-family:monospace;font-size:11px;line-height:1.35;color:#000;">
+
+    <div style="text-align:center;">
+
+        <strong style="font-size:14px;">${settings.cafeName}</strong><br>
+
+        <span>${settings.address}</span><br>
+
+        <span>Phone: ${settings.phone}</span><br>
+
+        <span>GSTIN: ${settings.gstin}</span>
+
+    </div>
+
+    <div style="border-top:1px dashed #000;margin:7px 0;"></div>
+
+    <div>Invoice No: ${bill.billNo}</div>
+
+    <div>Date: ${bill.date}</div>
+
+    <div>Customer: ${bill.customerName}</div>
+
+    <div>Payment: ${bill.paymentMethod}</div>
+
+    <div style="border-top:1px dashed #000;margin:7px 0 4px;"></div>
+
+    <div style="display:flex;gap:4px;font-weight:bold;">
+
+        <span style="flex:1;">Item</span>
+
+        <span style="width:28px;text-align:center;">Qty</span>
+
+        <span style="width:52px;text-align:right;">Amt</span>
+
+    </div>
+
+    ${itemsHtml}
+
+    <div style="border-top:1px dashed #000;margin:5px 0;"></div>
+
+    <div style="display:flex;"><span style="flex:1;">Subtotal</span><span>&#8377;${bill.subtotal.toFixed(2)}</span></div>
+
+    <div style="display:flex;"><span style="flex:1;">GST</span><span>&#8377;${bill.gst.toFixed(2)}</span></div>
+
+    <div style="display:flex;font-weight:bold;"><span style="flex:1;">Grand Total</span><span>&#8377;${bill.total.toFixed(2)}</span></div>
+
+    <div style="border-top:1px dashed #000;margin:7px 0;"></div>
+
+    <div style="text-align:center;">
+
+        <strong>Thank You</strong><br>
+
+        <span>Visit Again</span><br><br>
+
+        <span>Powered by</span><br>
+
+        <strong>MS ZAMA Dynamics</strong>
+
+    </div>
+
+</div>
+
+`;
+
+}
+
+function render80mmReceipt(bill){
+
+    return render58mmReceipt(bill)
+        .replace("thermal-receipt-58mm", "thermal-receipt-80mm")
+        .replace("width:58mm", "width:80mm");
+
+}
+
     // Now create bill object
 
 const bill = {
@@ -550,11 +579,11 @@ const bill = {
 
     }else if(settings.printFormat === "58mm"){
 
-        renderedInvoice = renderThermalReceipt(bill, "58mm");
+        renderedInvoice = render58mmReceipt(bill);
 
     }else if(settings.printFormat === "80mm"){
 
-        renderedInvoice = renderThermalReceipt(bill, "80mm");
+        renderedInvoice = render80mmReceipt(bill);
 
     }else{
 
@@ -562,7 +591,6 @@ const bill = {
 
     }
 
-    currentGeneratedBill = bill;
     document.getElementById("invoice").innerHTML = renderedInvoice;
 
 saveBillAndAdvanceNumber(bill, billNumber + 1, function(){
@@ -604,15 +632,7 @@ function printBill(){
 
     }
 
-    if(currentGeneratedBill && settings.printFormat !== "A4"){
-
-        printInvoice(renderThermalReceipt(currentGeneratedBill, settings.printFormat), settings.printFormat);
-
-        return;
-
-    }
-
-    printInvoice(invoice.innerHTML, settings.printFormat);
+    printInvoice(invoice.innerHTML);
 
 }
 

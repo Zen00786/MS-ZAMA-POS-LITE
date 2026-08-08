@@ -2,12 +2,6 @@
    Print - A4
 ========================================== */
 
-#print-host{
-
-    display:none;
-
-}
-
 @page{
 
     margin:12mm 10mm;
@@ -30,14 +24,24 @@
 
     }
 
-    /* The print host keeps screen layout from affecting printed output. */
-    #app{
+    /* Keep only the invoice's ancestor path in print layout. */
+    body > :not(#app),
+    #sidebar,
+    #header,
+    #sidebar-toggle,
+    #sidebar-backdrop,
+    #content > :not(.billing-card),
+    .billing-card > :not(#invoice-container){
 
         display:none !important;
 
     }
 
-    #print-host{
+    #app,
+    #main,
+    #content,
+    .billing-card,
+    #invoice-container{
 
         display:block !important;
         width:100% !important;
@@ -49,7 +53,30 @@
 
     }
 
-    #print-host .invoice{
+    /* Text nodes around the invoice remain in the billing card but occupy no print space. */
+    .billing-card{
+
+        font-size:0 !important;
+        line-height:0 !important;
+        background:transparent !important;
+        box-shadow:none !important;
+
+    }
+
+    #invoice{
+
+        display:block !important;
+        width:100% !important;
+        height:auto !important;
+        overflow:visible !important;
+        margin:0 !important;
+        padding:0 !important;
+        font-size:initial !important;
+        line-height:normal !important;
+
+    }
+
+    #invoice .invoice{
 
         display:block !important;
         width:100% !important;
@@ -61,7 +88,7 @@
 
     }
 
-    #print-host .bill-table{
+    #invoice .bill-table{
 
         display:table !important;
         width:100% !important;
@@ -71,22 +98,22 @@
 
     }
 
-    #print-host .bill-table th,
-    #print-host .bill-table td{
+    #invoice .bill-table th,
+    #invoice .bill-table td{
 
         border:1px solid #000;
         padding:8px;
 
     }
 
-    #print-host .bill-table tr{
+    #invoice .bill-table tr{
 
         break-inside:avoid;
         page-break-inside:avoid;
 
     }
 
-    #print-host .bill-table thead{
+    #invoice .bill-table thead{
 
         display:table-header-group;
 
