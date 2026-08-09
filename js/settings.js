@@ -113,6 +113,14 @@ function showSettings(){
 
             </button>
 
+            <button id="check-for-updates" type="button" onclick="checkForAppUpdates()">
+
+                Check for Updates
+
+            </button>
+
+            <p id="update-status" role="status" aria-live="polite"></p>
+
             <button onclick="document.getElementById('backup-file').click()">
 
                 Import Backup
@@ -231,6 +239,120 @@ function renderBusinessLogoPreview(){
 function exportBackup(){
 
     exportBackupData();
+
+}
+
+function checkForAppUpdates(){
+
+    const status = document.getElementById("update-status");
+    const button = document.getElementById("check-for-updates");
+
+    function setStatus(message){
+
+        if(status){
+            status.textContent = message;
+        }
+
+    }
+
+    if(!("serviceWorker" in navigator)){
+
+        setStatus("Updates are unavailable in this browser.");
+
+        return;
+
+    }
+
+    setStatus("Checking for updates...");
+
+    if(button){
+        button.disabled = true;
+    }
+
+    navigator.serviceWorker.getRegistration().then(function(registration){
+
+        if(!registration){
+
+            setStatus("Update service is not ready. Please try again shortly.");
+
+            return;
+
+        }
+
+        let updateFound = false;
+        let reloading = false;
+
+        const restartForUpdate = function(){
+
+            if(reloading){
+                return;
+            }
+
+            reloading = true;
+            setStatus("Update found — restarting...");
+            window.location.reload();
+
+        };
+
+        const observeWorker = function(worker){
+
+            if(!worker){
+                return;
+            }
+
+            updateFound = true;
+            setStatus("Update found — restarting...");
+
+            if(worker.state === "installed" && navigator.serviceWorker.controller){
+                worker.postMessage({ type:"SKIP_WAITING" });
+            }
+
+            worker.addEventListener("statechange", function(){
+
+                if(worker.state === "installed" && navigator.serviceWorker.controller){
+                    worker.postMessage({ type:"SKIP_WAITING" });
+                }
+
+            });
+
+        };
+
+        const updateFoundHandler = function(){
+
+            observeWorker(registration.installing);
+
+        };
+
+        registration.addEventListener("updatefound", updateFoundHandler);
+        navigator.serviceWorker.addEventListener("controllerchange", restartForUpdate, { once:true });
+
+        observeWorker(registration.installing || registration.waiting);
+
+        return registration.update().then(function(){
+
+            observeWorker(registration.installing || registration.waiting);
+
+            if(!updateFound){
+
+                registration.removeEventListener("updatefound", updateFoundHandler);
+                navigator.serviceWorker.removeEventListener("controllerchange", restartForUpdate);
+                setStatus("App is up to date.");
+
+            }
+
+        });
+
+    }).catch(function(){
+
+        setStatus("Unable to check for updates. Please try again.");
+
+    }).finally(function(){
+
+        if(button){
+            button.disabled = false;
+        }
+
+    });
 
 }
 

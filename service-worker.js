@@ -1,4 +1,4 @@
-const CACHE_NAME = "ms-zama-pos-lite-v7";
+const CACHE_NAME = "ms-zama-pos-lite-v8";
 
 const APP_SHELL = [
     "./",
@@ -60,6 +60,14 @@ self.addEventListener("activate", function(event){
     );
 
     self.clients.claim();
+
+});
+
+self.addEventListener("message", function(event){
+
+    if(event.data && event.data.type === "SKIP_WAITING"){
+        self.skipWaiting();
+    }
 
 });
 

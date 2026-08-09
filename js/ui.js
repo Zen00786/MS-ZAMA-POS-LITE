@@ -279,7 +279,7 @@ function showBilling(){
 
             <br>
 
-            <span class="billing-product-label">Product<br><br></span>
+            <span class="billing-product-label">Search Product<br><br></span>
 
 <input
     id="bill-product-search"
@@ -292,13 +292,16 @@ function showBilling(){
 
 <div id="bill-product-results" class="billing-product-results" role="listbox" aria-label="Product results"></div>
 
+<div class="billing-selected-product">
+    <span>Selected Product</span>
+    <div id="bill-selected-product" class="billing-selected-product-value" aria-live="polite">No product selected</div>
+</div>
+
             <select id="bill-product">
 
                 <option>Select Product</option>
 
             </select>
-
-            <br><br>
 
             Quantity
 
@@ -416,7 +419,20 @@ function showBilling(){
 
 }
 
-/* Mobile product search only updates the existing billing selector. */
+function setBillingSelectedProduct(productName){
+
+    const indicator = document.getElementById("bill-selected-product");
+
+    if(!indicator){
+        return;
+    }
+
+    indicator.textContent = productName || "No product selected";
+    indicator.classList.toggle("has-selection", Boolean(productName));
+
+}
+
+/* Product search only updates the existing billing selector. */
 function setupBillingProductSearch(){
 
     const search = document.getElementById("bill-product-search");
@@ -430,11 +446,16 @@ function setupBillingProductSearch(){
     function renderProductResults(){
 
         const keyword = search.value.trim().toLowerCase();
+
+        results.innerHTML = "";
+
+        if(!keyword){
+            return;
+        }
+
         const matchingProducts = products.filter(function(product){
             return product.name.toLowerCase().includes(keyword);
         });
-
-        results.innerHTML = "";
 
         matchingProducts.forEach(function(product){
 
@@ -446,8 +467,9 @@ function setupBillingProductSearch(){
 
             option.onclick = function(){
                 dropdown.value = product.name;
-                search.value = product.name;
-                renderProductResults();
+                search.value = "";
+                results.innerHTML = "";
+                setBillingSelectedProduct(product.name);
             };
 
             results.appendChild(option);

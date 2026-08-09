@@ -218,6 +218,8 @@ billItems.push({
 
 displayBill();
 
+setBillingSelectedProduct("");
+
 }
 
 /* ==========================================

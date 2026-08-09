@@ -56,6 +56,75 @@ body{
 .billing-product-search,
 .billing-product-results{
 
+    display:block;
+
+}
+
+.billing-product-search{
+
+    margin:0 0 10px;
+
+}
+
+.billing-product-results{
+
+    display:grid;
+    gap:8px;
+    max-height:192px;
+    margin:0 0 18px;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+
+}
+
+.billing-product-results:empty{
+
+    display:none;
+
+}
+
+.billing-selected-product{
+
+    margin:0 0 18px;
+    font-size:14px;
+    color:#475569;
+
+}
+
+.billing-selected-product-value{
+
+    min-height:40px;
+    margin-top:6px;
+    padding:10px 12px;
+    color:#64748b;
+    background:#f8fafc;
+    border:1px solid #d6dce5;
+    border-radius:8px;
+
+}
+
+.billing-selected-product-value.has-selection{
+
+    color:#1e293b;
+    font-weight:600;
+
+}
+
+.billing-product-option{
+
+    width:100%;
+    min-height:40px;
+    padding:9px 12px;
+    color:#1e293b;
+    text-align:left;
+    background:#f8fafc;
+    border:1px solid #d6dce5;
+    border-radius:8px;
+
+}
+
+#bill-product{
+
     display:none;
 
 }
@@ -417,39 +486,6 @@ nav li.active{
     .invoice{
         margin:0;
     }
-    .billing-product-search{
-        display:block;
-        margin:0 0 10px;
-    }
-
-    .billing-product-results{
-        display:grid;
-        gap:8px;
-        max-height:192px;
-        margin:0 0 18px;
-        overflow-y:auto;
-        -webkit-overflow-scrolling:touch;
-    }
-
-    .billing-product-option{
-        width:100%;
-        min-height:48px;
-        padding:12px 14px;
-        color:#1e293b;
-        text-align:left;
-        background:#f8fafc;
-        border:1px solid #d6dce5;
-        border-radius:8px;
-    }
-
-    #bill-product{
-        display:none;
-    }
-
-    .billing-product-label{
-        display:none;
-    }
-
     .billing-card #bill-items{
         width:100%;
     }
