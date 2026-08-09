@@ -6,6 +6,8 @@ let billItems = [];
 let heldBills = [];
 let billNumber = 1;
 let billNumberLoaded = false;
+let orderNumber = 1;
+let orderNumberLoaded = false;
 let isGeneratingBill = false;
 
 /* ==========================================
@@ -28,6 +30,11 @@ function render58mmReceipt(bill, printFormat){
         : format === "A4"
         ? "210mm"
         : "58mm";
+    const discount = Number(bill.discount) || 0;
+    const parcelCharge = Number(bill.parcelCharge) || 0;
+    const orderNumberHtml = Number.isInteger(Number(bill.orderNo))
+        ? `<div style="text-align:center;font-weight:bold;font-size:18px;line-height:1.1;margin-bottom:6px;">ORDER<br>${String(bill.orderNo).padStart(3, "0")}</div>`
+        : "";
 
     const itemsHtml = bill.items.map(function(item){
 
@@ -65,6 +72,8 @@ function render58mmReceipt(bill, printFormat){
 
     <div style="border-top:1px dashed #000;margin:7px 0;"></div>
 
+    ${orderNumberHtml}
+
     <div>Invoice No: ${bill.billNo}</div>
 
     <div>Date: ${bill.date}</div>
@@ -92,6 +101,10 @@ function render58mmReceipt(bill, printFormat){
     <div style="display:flex;"><span style="flex:1;">Subtotal</span><span>&#8377;${bill.subtotal.toFixed(2)}</span></div>
 
     <div style="display:flex;"><span style="flex:1;">GST</span><span>&#8377;${bill.gst.toFixed(2)}</span></div>
+
+    ${discount > 0 ? `<div style="display:flex;"><span style="flex:1;">${bill.discountPercent > 0 ? `Discount (${bill.discountPercent}%)` : "Discount"}</span><span>-&#8377;${discount.toFixed(2)}</span></div>` : ""}
+
+    ${parcelCharge > 0 ? `<div style="display:flex;"><span style="flex:1;">Parcel / Packing</span><span>&#8377;${parcelCharge.toFixed(2)}</span></div>` : ""}
 
     <div style="display:flex;font-weight:bold;"><span style="flex:1;">Grand Total</span><span>&#8377;${bill.total.toFixed(2)}</span></div>
 
@@ -122,6 +135,22 @@ function setBillNumber(nextBillNumber){
 
 }
 
+function setOrderNumber(nextOrderNumber){
+
+    orderNumber = nextOrderNumber;
+    orderNumberLoaded = true;
+
+}
+
+function getBillAdjustment(inputId){
+
+    const input = document.getElementById(inputId);
+    const amount = Number(input && input.value);
+
+    return Number.isFinite(amount) && amount > 0 ? amount : 0;
+
+}
+
 /* ==========================================
    Add Item To Bill
 ========================================== */
@@ -132,7 +161,7 @@ function addToBill(){
 
     const qty = Number(document.getElementById("bill-qty").value);
 
-    if(productName === ""){
+    if(productName === "" || productName === "Select Product"){
 
         alert("Select a product.");
 
@@ -145,6 +174,14 @@ function addToBill(){
         return item.name === productName;
 
     });
+
+    if(!product){
+
+        alert("Selected product is unavailable. Please select it again.");
+
+        return;
+
+    }
 
 const existing = billItems.find(function(item){
 
@@ -189,7 +226,8 @@ displayBill();
 
 function displayBill(){
 
-    let grandTotal = 0;
+    let subtotal = 0;
+    let totalGST = 0;
 
     let html = `
 
@@ -213,7 +251,8 @@ function displayBill(){
 
     billItems.forEach(function(item,index){
 
-        grandTotal += item.total;
+        subtotal += item.total;
+        totalGST += (item.total * item.gst) / 100;
 
         html += `
 
@@ -255,7 +294,20 @@ ${item.qty}
 
     document.getElementById("bill-items").innerHTML = html;
 
-    document.getElementById("grand-total").innerText = grandTotal;
+    const adjustments = document.getElementById("bill-adjustments");
+
+    if(adjustments){
+
+        adjustments.style.display = billItems.length > 0 ? "block" : "none";
+
+    }
+
+    const discountPercent = getBillAdjustment("bill-discount");
+    const discount = subtotal * (discountPercent / 100);
+    const parcelCharge = getBillAdjustment("parcel-charge");
+
+    document.getElementById("grand-total").innerText =
+        (subtotal + totalGST - discount + parcelCharge).toFixed(2);
 
 }
 
@@ -319,9 +371,9 @@ function decreaseQty(index){
 
 function generateBill(){
 
-    if(!billNumberLoaded){
+    if(!billNumberLoaded || !orderNumberLoaded){
 
-        alert("Invoice number is loading. Please try again in a moment.");
+        alert("Bill numbers are loading. Please try again in a moment.");
 
         return;
 
@@ -347,6 +399,8 @@ const datePart =
 const invoiceNumber =
 `${settings.invoicePrefix}-${datePart}-${String(billNumber).padStart(4,"0")}`;
 
+const currentOrderNumber = orderNumber;
+
 const customerName =
     document.getElementById("customer-name").value.trim();
 
@@ -358,6 +412,7 @@ const paymentMethod =
 
 let grandTotal = 0;
 let totalGST = 0;
+const parcelCharge = getBillAdjustment("parcel-charge");
 
 billItems.forEach(function(item){
 
@@ -366,6 +421,17 @@ billItems.forEach(function(item){
     totalGST += (item.total * item.gst) / 100;
 
 });
+
+const discountPercent = getBillAdjustment("bill-discount");
+const discount = grandTotal * (discountPercent / 100);
+
+if(discountPercent > 100){
+
+    alert("Discount cannot exceed 100%.");
+    isGeneratingBill = false;
+    return;
+
+}
 
 function renderA4Invoice(bill){
 
@@ -558,6 +624,8 @@ const bill = {
 
     billNo: invoiceNumber,
 
+    orderNo: currentOrderNumber,
+
     date: new Date().toLocaleString(),
 
     customerName:
@@ -578,7 +646,13 @@ const bill = {
 
     gst:totalGST,
 
-    total:grandTotal + totalGST
+    discountPercent,
+
+    discount,
+
+    parcelCharge,
+
+    total:grandTotal + totalGST - discount + parcelCharge
 
 };
 
@@ -604,11 +678,12 @@ const bill = {
 
     document.getElementById("invoice").innerHTML = renderedInvoice;
 
-saveBillAndAdvanceNumber(bill, billNumber + 1, function(){
+saveBillAndAdvanceNumber(bill, billNumber + 1, orderNumber + 1, function(){
 
     billHistory.push(bill);
 
     billNumber++;
+    orderNumber++;
     isGeneratingBill = false;
 
     if(document.getElementById("nav-dashboard").classList.contains("active")){
@@ -820,6 +895,10 @@ function newBill(){
     document.getElementById("bill-product").selectedIndex = 0;
 
     document.getElementById("bill-qty").value = 1;
+
+    document.getElementById("bill-discount").value = 0;
+
+    document.getElementById("parcel-charge").value = 0;
 
 }
 

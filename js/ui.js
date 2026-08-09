@@ -328,6 +328,22 @@ function showBilling(){
 
 </div>
 
+<div id="bill-adjustments" style="display:none;max-width:360px;margin-top:14px;padding:10px;border:1px solid #ddd;border-radius:6px;">
+
+    <strong style="font-size:14px;">Bill Adjustments</strong>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;">
+        <label for="bill-discount" style="margin:0;">Discount (%)</label>
+        <input id="bill-discount" type="number" min="0" max="100" step="0.01" value="0" oninput="displayBill()" style="width:80px;">
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;">
+        <label for="parcel-charge" style="margin:0;">Parcel / Packing</label>
+        <input id="parcel-charge" type="number" min="0" step="0.01" value="0" oninput="displayBill()" style="width:80px;">
+    </div>
+
+</div>
+
 <br>
 
 <h2>

@@ -77,6 +77,7 @@ console.log("Database Connected");
 loadProducts();
 loadBills();
 loadBillNumber();
+loadOrderNumber();
 loadHeldBills();
 
 loadSettings(function(){
@@ -452,10 +453,95 @@ function saveBillNumber(nextBillNumber){
 }
 
 /* ==========================================
+   Order Number Counter
+========================================== */
+
+function loadOrderNumber(){
+
+    const transaction = db.transaction(["counters"], "readonly");
+    const store = transaction.objectStore("counters");
+    const request = store.get("orderNumber");
+
+    request.onsuccess = function(){
+
+        const savedOrderNumber = Number(request.result && request.result.value);
+
+        if(Number.isInteger(savedOrderNumber) && savedOrderNumber > 0){
+
+            setOrderNumber(savedOrderNumber);
+            return;
+
+        }
+
+        restoreOrderNumberFromExistingBills();
+
+    };
+
+    request.onerror = function(){
+
+        setOrderNumber(1);
+
+    };
+
+}
+
+function restoreOrderNumberFromExistingBills(){
+
+    const transaction = db.transaction(["bills"], "readonly");
+    const store = transaction.objectStore("bills");
+    const request = store.getAll();
+
+    request.onsuccess = function(){
+
+        let highestOrderNumber = 0;
+
+        request.result.forEach(function(bill){
+
+            const savedOrderNumber = Number(bill.orderNo);
+
+            if(Number.isInteger(savedOrderNumber) && savedOrderNumber > 0){
+
+                highestOrderNumber = Math.max(highestOrderNumber, savedOrderNumber);
+
+            }
+
+        });
+
+        const nextOrderNumber = highestOrderNumber + 1;
+
+        setOrderNumber(nextOrderNumber);
+
+        saveOrderNumber(nextOrderNumber);
+
+    };
+
+    request.onerror = function(){
+
+        setOrderNumber(1);
+
+    };
+
+}
+
+function saveOrderNumber(nextOrderNumber){
+
+    const transaction = db.transaction(["counters"], "readwrite");
+    const store = transaction.objectStore("counters");
+
+    store.put({
+
+        id: "orderNumber",
+        value: nextOrderNumber
+
+    });
+
+}
+
+/* ==========================================
    Save Bill And Advance Invoice Number
 ========================================== */
 
-function saveBillAndAdvanceNumber(bill, nextBillNumber, onSuccess, onError){
+function saveBillAndAdvanceNumber(bill, nextBillNumber, nextOrderNumber, onSuccess, onError){
 
     const transaction = db.transaction(["bills", "counters"], "readwrite");
 
@@ -474,6 +560,13 @@ function saveBillAndAdvanceNumber(bill, nextBillNumber, onSuccess, onError){
 
         id: "billNumber",
         value: nextBillNumber
+
+    });
+
+    counterStore.put({
+
+        id: "orderNumber",
+        value: nextOrderNumber
 
     });
 
@@ -753,14 +846,26 @@ function validateBackupData(backup){
 
     }
 
-    if(data.counters.length !== 1 || data.counters[0].id !== "billNumber" ||
-        !Number.isInteger(data.counters[0].value) || data.counters[0].value < 1){
+    const billCounter = data.counters.find(function(counter){
+        return counter.id === "billNumber";
+    });
+    const orderCounter = data.counters.find(function(counter){
+        return counter.id === "orderNumber";
+    });
+
+    if((data.counters.length !== 1 && data.counters.length !== 2) ||
+        !data.counters.every(function(counter){
+            return counter.id === "billNumber" || counter.id === "orderNumber";
+        }) || !billCounter ||
+        !Number.isInteger(billCounter.value) || billCounter.value < 1 ||
+        (orderCounter && (!Number.isInteger(orderCounter.value) || orderCounter.value < 1))){
 
         return { valid:false, message:"Backup contains an invalid invoice counter." };
 
     }
 
     let highestBillNumber = 0;
+    let highestOrderNumber = 0;
 
     for(let index = 0; index < data.bills.length; index++){
 
@@ -780,11 +885,25 @@ function validateBackupData(backup){
 
         }
 
+        const savedOrderNumber = Number(bill.orderNo);
+
+        if(Number.isInteger(savedOrderNumber) && savedOrderNumber > 0){
+
+            highestOrderNumber = Math.max(highestOrderNumber, savedOrderNumber);
+
+        }
+
     }
 
-    if(data.counters[0].value <= highestBillNumber){
+    if(billCounter.value <= highestBillNumber){
 
         return { valid:false, message:"Backup invoice counter would create duplicate invoice numbers." };
+
+    }
+
+    if(orderCounter && orderCounter.value <= highestOrderNumber){
+
+        return { valid:false, message:"Backup order counter would create duplicate order numbers." };
 
     }
 

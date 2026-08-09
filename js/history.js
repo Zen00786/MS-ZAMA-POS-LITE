@@ -30,6 +30,8 @@ function renderBillHistory(){
 
             <div class="card" style="margin-top:15px;">
 
+                ${Number.isInteger(Number(bill.orderNo)) ? `<h2>Order #${String(bill.orderNo).padStart(3, "0")}</h2>` : ""}
+
                 <h3>Bill #${bill.billNo}</h3>
 
                 <p>${bill.date}</p>
@@ -70,6 +72,15 @@ function renderBillHistory(){
 
 function renderSavedInvoice(bill){
 
+    const discount = Number(bill.discount) || 0;
+    const parcelCharge = Number(bill.parcelCharge) || 0;
+    const discountLabel = Number(bill.discountPercent) > 0
+        ? `Discount (${bill.discountPercent}%)`
+        : "Discount";
+    const orderNumberHtml = Number.isInteger(Number(bill.orderNo))
+        ? `<div style="text-align:center;font-size:32px;font-weight:bold;line-height:1.05;margin:16px 0;">ORDER<br>${String(bill.orderNo).padStart(3, "0")}</div>`
+        : "";
+
     let html = `
 
 <div class="card invoice">
@@ -87,6 +98,8 @@ function renderSavedInvoice(bill){
 </div>
 
 <hr>
+
+${orderNumberHtml}
 
 <table class="bill-table">
 
@@ -201,6 +214,22 @@ function renderSavedInvoice(bill){
     </td>
 
 </tr>
+
+${discount > 0 ? `<tr>
+
+    <td><strong>${discountLabel}</strong></td>
+
+    <td style="text-align:right;">- ₹${discount.toFixed(2)}</td>
+
+</tr>` : ""}
+
+${parcelCharge > 0 ? `<tr>
+
+    <td><strong>Parcel / Packing Charge</strong></td>
+
+    <td style="text-align:right;">₹${parcelCharge.toFixed(2)}</td>
+
+</tr>` : ""}
 
 <tr>
 
