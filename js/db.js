@@ -76,15 +76,30 @@ console.log("Database Connected");
 
 loadProducts();
 loadBills();
-loadBillNumber();
-loadOrderNumber();
 loadHeldBills();
 
-loadSettings(function(){
-    ensureInstallationId(function(){
-        initializeApplication();
+let loadedCounterCount = 0;
+
+function startApplicationWhenCountersReady(){
+
+    loadedCounterCount++;
+
+    if(loadedCounterCount !== 2){
+
+        return;
+
+    }
+
+    loadSettings(function(){
+        ensureInstallationId(function(){
+            initializeApplication();
+        });
     });
-});
+
+}
+
+loadBillNumber(startApplicationWhenCountersReady);
+loadOrderNumber(startApplicationWhenCountersReady);
 
 };
 
@@ -365,7 +380,7 @@ function loadSettings(onLoaded){
    Invoice Number Counter
 ========================================== */
 
-function loadBillNumber(){
+function loadBillNumber(onLoaded){
 
     const transaction = db.transaction(["counters"], "readonly");
 
@@ -381,23 +396,33 @@ function loadBillNumber(){
 
             setBillNumber(savedBillNumber);
 
+            if(onLoaded){
+
+                onLoaded();
+
+            }
+
             return;
 
         }
 
-        restoreBillNumberFromExistingBills();
+        restoreBillNumberFromExistingBills(onLoaded);
 
     };
 
     request.onerror = function(){
 
-        setBillNumber(1);
+        window.setTimeout(function(){
+
+            loadBillNumber(onLoaded);
+
+        }, 250);
 
     };
 
 }
 
-function restoreBillNumberFromExistingBills(){
+function restoreBillNumberFromExistingBills(onLoaded){
 
     const transaction = db.transaction(["bills"], "readonly");
 
@@ -423,21 +448,41 @@ function restoreBillNumberFromExistingBills(){
 
         const nextBillNumber = highestBillNumber + 1;
 
-        setBillNumber(nextBillNumber);
+        saveBillNumber(nextBillNumber, function(){
 
-        saveBillNumber(nextBillNumber);
+            setBillNumber(nextBillNumber);
+
+            if(onLoaded){
+
+                onLoaded();
+
+            }
+
+        }, function(){
+
+            window.setTimeout(function(){
+
+                loadBillNumber(onLoaded);
+
+            }, 250);
+
+        });
 
     };
 
     request.onerror = function(){
 
-        setBillNumber(1);
+        window.setTimeout(function(){
+
+            loadBillNumber(onLoaded);
+
+        }, 250);
 
     };
 
 }
 
-function saveBillNumber(nextBillNumber){
+function saveBillNumber(nextBillNumber, onSuccess, onError){
 
     const transaction = db.transaction(["counters"], "readwrite");
 
@@ -450,13 +495,33 @@ function saveBillNumber(nextBillNumber){
 
     });
 
+    transaction.oncomplete = function(){
+
+        if(onSuccess){
+
+            onSuccess();
+
+        }
+
+    };
+
+    transaction.onerror = function(){
+
+        if(onError){
+
+            onError();
+
+        }
+
+    };
+
 }
 
 /* ==========================================
    Order Number Counter
 ========================================== */
 
-function loadOrderNumber(){
+function loadOrderNumber(onLoaded){
 
     const transaction = db.transaction(["counters"], "readonly");
     const store = transaction.objectStore("counters");
@@ -469,23 +534,34 @@ function loadOrderNumber(){
         if(Number.isInteger(savedOrderNumber) && savedOrderNumber > 0){
 
             setOrderNumber(savedOrderNumber);
+
+            if(onLoaded){
+
+                onLoaded();
+
+            }
+
             return;
 
         }
 
-        restoreOrderNumberFromExistingBills();
+        restoreOrderNumberFromExistingBills(onLoaded);
 
     };
 
     request.onerror = function(){
 
-        setOrderNumber(1);
+        window.setTimeout(function(){
+
+            loadOrderNumber(onLoaded);
+
+        }, 250);
 
     };
 
 }
 
-function restoreOrderNumberFromExistingBills(){
+function restoreOrderNumberFromExistingBills(onLoaded){
 
     const transaction = db.transaction(["bills"], "readonly");
     const store = transaction.objectStore("bills");
@@ -509,21 +585,41 @@ function restoreOrderNumberFromExistingBills(){
 
         const nextOrderNumber = highestOrderNumber + 1;
 
-        setOrderNumber(nextOrderNumber);
+        saveOrderNumber(nextOrderNumber, function(){
 
-        saveOrderNumber(nextOrderNumber);
+            setOrderNumber(nextOrderNumber);
+
+            if(onLoaded){
+
+                onLoaded();
+
+            }
+
+        }, function(){
+
+            window.setTimeout(function(){
+
+                loadOrderNumber(onLoaded);
+
+            }, 250);
+
+        });
 
     };
 
     request.onerror = function(){
 
-        setOrderNumber(1);
+        window.setTimeout(function(){
+
+            loadOrderNumber(onLoaded);
+
+        }, 250);
 
     };
 
 }
 
-function saveOrderNumber(nextOrderNumber){
+function saveOrderNumber(nextOrderNumber, onSuccess, onError){
 
     const transaction = db.transaction(["counters"], "readwrite");
     const store = transaction.objectStore("counters");
@@ -534,6 +630,26 @@ function saveOrderNumber(nextOrderNumber){
         value: nextOrderNumber
 
     });
+
+    transaction.oncomplete = function(){
+
+        if(onSuccess){
+
+            onSuccess();
+
+        }
+
+    };
+
+    transaction.onerror = function(){
+
+        if(onError){
+
+            onError();
+
+        }
+
+    };
 
 }
 
