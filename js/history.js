@@ -24,7 +24,15 @@ function renderBillHistory(){
 
     `;
 
-    billHistory.forEach(function(bill, index){
+    billHistory
+    .map(function(bill, index){
+        return { bill: bill, index: index };
+    })
+    .reverse()
+    .forEach(function(entry){
+
+        const bill = entry.bill;
+        const index = entry.index;
 
         html += `
 
