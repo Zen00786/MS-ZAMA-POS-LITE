@@ -8,6 +8,7 @@ let billNumber = 1;
 let billNumberLoaded = false;
 let orderNumber = 1;
 let orderNumberLoaded = false;
+let orderNumberDate = "";
 let isGeneratingBill = false;
 
 /* ==========================================
@@ -135,9 +136,20 @@ function setBillNumber(nextBillNumber){
 
 }
 
-function setOrderNumber(nextOrderNumber){
+function getOrderNumberDateKey(date){
+
+    const localDate = date || new Date();
+
+    return localDate.getFullYear() + "-" +
+        String(localDate.getMonth() + 1).padStart(2, "0") + "-" +
+        String(localDate.getDate()).padStart(2, "0");
+
+}
+
+function setOrderNumber(nextOrderNumber, savedDate){
 
     orderNumber = nextOrderNumber;
+    orderNumberDate = savedDate || getOrderNumberDateKey();
     orderNumberLoaded = true;
 
 }
@@ -376,6 +388,18 @@ function generateBill(){
     if(!billNumberLoaded || !orderNumberLoaded){
 
         alert("Bill numbers are loading. Please try again in a moment.");
+
+        return;
+
+    }
+
+    if(orderNumberDate !== getOrderNumberDateKey()){
+
+        resetOrderNumberForToday(function(){
+            generateBill();
+        }, function(){
+            alert("Unable to reset the daily order number. Please try again.");
+        });
 
         return;
 

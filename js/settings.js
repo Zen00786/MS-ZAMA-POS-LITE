@@ -107,12 +107,6 @@ function showSettings(){
 
             <br><br>
 
-            <button onclick="exportBackup()">
-
-                Export Backup
-
-            </button>
-
             <button id="check-for-updates" type="button" onclick="checkForAppUpdates()">
 
                 Check for Updates
@@ -121,20 +115,37 @@ function showSettings(){
 
             <p id="update-status" role="status" aria-live="polite"></p>
 
-            <button onclick="document.getElementById('backup-file').click()">
+        </div>
 
-                Import Backup
-
-            </button>
-
-            <input
-                id="backup-file"
-                type="file"
-                accept="application/json,.json"
-                onchange="importBackup(event)"
-                style="display:none;"
-            >
-
+        <div class="card">
+            <h2>Backup & Restore</h2>
+            <br>
+            <h3>POS Setup</h3>
+            <p>Business settings, products, license/configuration, and counters. Bills are not included.</p>
+            <button type="button" onclick="exportPosSetupBackup()">Export POS Setup</button>
+            <button type="button" onclick="document.getElementById('pos-setup-backup-file').click()">Import POS Setup</button>
+            <input id="pos-setup-backup-file" type="file" accept="application/json,.json" onchange="importPosSetupFile(event)" style="display:none;">
+            <hr style="margin:30px 0;">
+            <h3>Bills & Reports</h3>
+            <p>Exports saved bill records for the selected period. POS settings and products are not included.</p>
+            <label for="bills-backup-period">Export Period</label><br><br>
+            <select id="bills-backup-period" onchange="toggleBillsBackupRange()">
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+                <option value="custom">Custom Date Range</option>
+            </select>
+            <div id="bills-backup-custom-range" style="display:none;margin-top:16px;">
+                <label for="bills-backup-from">From</label><br>
+                <input id="bills-backup-from" type="date"><br><br>
+                <label for="bills-backup-to">To</label><br>
+                <input id="bills-backup-to" type="date">
+            </div>
+            <br><br>
+            <button type="button" onclick="exportBillsReportsFromSettings()">Export Bills & Reports</button>
+            <button type="button" onclick="document.getElementById('bills-reports-backup-file').click()">Import Bills & Reports</button>
+            <input id="bills-reports-backup-file" type="file" accept="application/json,.json" onchange="importBillsReportsFile(event)" style="display:none;">
         </div>
 
         <div class="card about-card">
@@ -233,6 +244,108 @@ function renderBusinessLogoPreview(){
         preview.innerHTML = `<img src="${settings.businessLogo}" alt="Business logo">`;
 
     }
+
+}
+
+function toggleBillsBackupRange(){
+
+    const period = document.getElementById("bills-backup-period").value;
+    document.getElementById("bills-backup-custom-range").style.display = period === "custom" ? "block" : "none";
+
+}
+
+function exportBillsReportsFromSettings(){
+
+    const period = document.getElementById("bills-backup-period").value;
+
+    loadBills(function(){
+
+    const today = new Date();
+    let bills;
+    let details;
+
+    if(period === "custom"){
+        const fromValue = document.getElementById("bills-backup-from").value;
+        const toValue = document.getElementById("bills-backup-to").value;
+        const fromDate = parseDateInput(fromValue);
+        const toDate = parseDateInput(toValue);
+
+        if(!fromDate || !toDate || fromDate > toDate){
+            alert("Choose a valid From and To date for Bills & Reports export.");
+            return;
+        }
+
+        bills = getBillsForDateRange(fromDate, toDate);
+        details = { type:"Custom Range", from:fromValue, to:toValue, fileDate:fromValue + "-to-" + toValue };
+    }else{
+        bills = getBillsForPeriod(period, today);
+
+        if(period === "weekly"){
+            const weekStart = getWeekStart(today);
+            const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
+            details = { type:"Weekly", from:getOrderNumberDateKey(weekStart), to:getOrderNumberDateKey(weekEnd), fileDate:getOrderNumberDateKey(weekStart) + "-to-" + getOrderNumberDateKey(weekEnd) };
+        }else if(period === "monthly"){
+            details = { type:"Monthly", from:getOrderNumberDateKey(today).slice(0, 7), fileDate:getOrderNumberDateKey(today).slice(0, 7) };
+        }else if(period === "yearly"){
+            details = { type:"Yearly", from:String(today.getFullYear()), fileDate:String(today.getFullYear()) };
+        }else{
+            details = { type:"Daily", from:getOrderNumberDateKey(today), fileDate:getOrderNumberDateKey(today) };
+        }
+    }
+
+    exportBillsReportsBackup(bills, details);
+
+    });
+
+}
+
+function readBackupFile(event, onBackup){
+
+    const file = event.target.files[0];
+    if(!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(){
+        try{
+            onBackup(JSON.parse(reader.result));
+        }catch(error){
+            alert("Invalid backup file. Please choose a valid JSON file.");
+        }
+        event.target.value = "";
+    };
+    reader.onerror = function(){
+        alert("Unable to read the selected backup file.");
+        event.target.value = "";
+    };
+    reader.readAsText(file, "UTF-8");
+
+}
+
+function importPosSetupFile(event){
+
+    readBackupFile(event, function(backup){
+        const validation = validatePosSetupBackup(backup);
+        if(!validation.valid){ alert(validation.message); return; }
+        if(!confirm("Import POS Setup? This will replace current business settings, products, license/configuration, and counters. Bill History will not be changed.")) return;
+        importPosSetupBackup(backup, function(){
+            alert("POS Setup restored. The app will now reload.");
+            window.location.reload();
+        }, alert);
+    });
+
+}
+
+function importBillsReportsFile(event){
+
+    readBackupFile(event, function(backup){
+        const validation = validateBillsReportsBackup(backup);
+        if(!validation.valid){ alert(validation.message); return; }
+        if(!confirm("Import Bills & Reports? Existing bills will remain. Bills with an existing invoice number will be skipped.")) return;
+        importBillsReportsBackup(backup, function(importedCount, skippedCount){
+            alert(`Bills & Reports imported: ${importedCount} added, ${skippedCount} skipped.`);
+            loadBills();
+        }, alert);
+    });
 
 }
 

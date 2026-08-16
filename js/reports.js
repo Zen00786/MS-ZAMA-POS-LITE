@@ -2,7 +2,7 @@
    Sales summaries and reports
 ========================================== */
 
-let selectedReportPeriod = "daily";
+let selectedReportPeriod = "all";
 let customReportRange = { from: "", to: "", error: "" };
 
 function toNumber(value){
@@ -95,6 +95,14 @@ function getBillsForPeriod(period, referenceDate){
         if(period === "yearly") return billDate.getFullYear() === reference.getFullYear();
         return isSameLocalDay(billDate, reference);
     });
+}
+
+function getAllReportBills(){
+
+    return billHistory.filter(function(bill){
+        return isActiveBill(bill) && Boolean(parseSavedBillDate(bill.date));
+    });
+
 }
 
 function parseDateInput(value){
@@ -196,6 +204,16 @@ function getDateRangeLabel(fromDate, toDate){
 
 function formatCurrency(value){ return "₹" + toNumber(value).toFixed(2); }
 
+function getReportDateKey(date){
+
+    const localDate = date || new Date();
+
+    return localDate.getFullYear() + "-" +
+        String(localDate.getMonth() + 1).padStart(2, "0") + "-" +
+        String(localDate.getDate()).padStart(2, "0");
+
+}
+
 function getTodaySalesSummary(){ return calculateSalesSummary(getBillsForPeriod("daily")); }
 
 /* Kept for the existing dashboard template; all values use the same summary. */
@@ -203,7 +221,12 @@ function getTotalSales(){ return getTodaySalesSummary().totalSales; }
 
 function getTotalProfit(){ return getTodaySalesSummary().profit; }
 
-function showReports(){ loadBills(renderSalesReport); }
+function showReports(){
+
+    selectedReportPeriod = "all";
+    loadBills(renderSalesReport);
+
+}
 
 function updateSalesReport(period){
     selectedReportPeriod = period;
@@ -227,17 +250,66 @@ function generateCustomSalesReport(){
     renderSalesReport();
 }
 
+function getSelectedReportBills(referenceDate){
+
+    const reference = referenceDate instanceof Date ? referenceDate : new Date();
+    const customFromDate = parseDateInput(customReportRange.from);
+    const customToDate = parseDateInput(customReportRange.to);
+
+    if(selectedReportPeriod === "all") return getAllReportBills();
+    if(selectedReportPeriod === "custom"){
+        return customFromDate && customToDate && customFromDate <= customToDate
+            ? getBillsForDateRange(customFromDate, customToDate)
+            : [];
+    }
+
+    return getBillsForPeriod(selectedReportPeriod, reference);
+
+}
+
+function getBillProfit(bill){
+
+    return calculateSalesSummary([bill]).profit;
+
+}
+
+function renderReportBillRows(bills){
+
+    if(bills.length === 0){
+        return `<tr><td colspan="9">No bills found for this period.</td></tr>`;
+    }
+
+    return bills.map(function(bill){
+        const subtotal = getBillSubtotal(bill);
+        const gst = getBillGST(bill);
+        const discount = getBillDiscount(bill, subtotal);
+        const parcelCharge = toNumber(bill.parcelCharge);
+        const total = getBillTotal(bill, subtotal, gst, discount, parcelCharge);
+
+        return `<tr>
+            <td>${bill.date || "-"}</td>
+            <td>${bill.billNo || "-"}</td>
+            <td>${Number.isInteger(Number(bill.orderNo)) ? String(bill.orderNo).padStart(3, "0") : "-"}</td>
+            <td>${formatCurrency(subtotal)}</td>
+            <td>${formatCurrency(gst)}</td>
+            <td>${formatCurrency(discount)}</td>
+            <td>${formatCurrency(parcelCharge)}</td>
+            <td>${formatCurrency(total)}</td>
+            <td>${formatCurrency(getBillProfit(bill))}</td>
+        </tr>`;
+    }).join("");
+
+}
+
 function renderSalesReport(){
     const customFromDate = parseDateInput(customReportRange.from);
     const customToDate = parseDateInput(customReportRange.to);
     const isValidCustomRange = selectedReportPeriod === "custom" && customFromDate && customToDate && customFromDate <= customToDate;
-    const reportBills = selectedReportPeriod === "custom"
-        ? (isValidCustomRange ? getBillsForDateRange(customFromDate, customToDate) : [])
-        : getBillsForPeriod(selectedReportPeriod);
+    const reportBills = getSelectedReportBills();
     const summary = calculateSalesSummary(reportBills);
     const periodLabel = selectedReportPeriod === "custom"
         ? (isValidCustomRange ? getDateRangeLabel(customFromDate, customToDate) : "Custom Date Range")
-        : getPeriodLabel(selectedReportPeriod);
+        : (selectedReportPeriod === "all" ? "All Saved Bills" : getPeriodLabel(selectedReportPeriod));
     const customRangeControls = selectedReportPeriod === "custom" ? `
             <div style="margin-top:16px;">
                 <label for="report-from-date">From</label><br>
@@ -256,6 +328,7 @@ function renderSalesReport(){
         <div class="card" style="margin-bottom:20px;">
             <label for="report-period"><strong>Report Period</strong></label><br><br>
             <select id="report-period" onchange="updateSalesReport(this.value)">
+                <option value="all" ${selectedReportPeriod === "all" ? "selected" : ""}>All</option>
                 <option value="daily" ${selectedReportPeriod === "daily" ? "selected" : ""}>Daily</option>
                 <option value="weekly" ${selectedReportPeriod === "weekly" ? "selected" : ""}>Weekly</option>
                 <option value="monthly" ${selectedReportPeriod === "monthly" ? "selected" : ""}>Monthly</option>
@@ -273,19 +346,89 @@ function renderSalesReport(){
             <div class="card"><h3>Discounts</h3><h2>${formatCurrency(summary.discounts)}</h2></div>
             <div class="card"><h3>Parcel Charges</h3><h2>${formatCurrency(summary.parcelCharges)}</h2></div>
             <div class="card"><h3>Profit</h3><h2>${formatCurrency(summary.profit)}</h2></div>
+        </div>
+        <div class="card" style="margin-top:20px;overflow-x:auto;">
+            <h2>Detailed Bills</h2>
+            <br>
+            <table class="bill-table">
+                <tr>
+                    <th>Date</th><th>Bill / Invoice No.</th><th>Order No.</th><th>Subtotal</th><th>GST</th><th>Discount</th><th>Parcel / Packing Charge</th><th>Grand Total</th><th>Profit</th>
+                </tr>
+                ${renderReportBillRows(reportBills)}
+            </table>
         </div>`;
 }
 
 function exportSalesCSV(){
-    let csv = "Invoice No,Date,Customer,Phone,Payment,Subtotal,GST,Grand Total\n";
-    billHistory.forEach(function(bill){
-        csv += [ `"${bill.billNo}"`, `"${bill.date}"`, `"${bill.customerName}"`, `"${bill.customerPhone}"`, `"${bill.paymentMethod}"`, `"${bill.subtotal}"`, `"${bill.gst}"`, `"${bill.total}"` ].join(",") + "\n";
+    const today = new Date();
+    const isCustomRange = selectedReportPeriod === "custom";
+    const exportedBills = getSelectedReportBills(today);
+    const summary = calculateSalesSummary(exportedBills);
+    let reportType = selectedReportPeriod.charAt(0).toUpperCase() + selectedReportPeriod.slice(1);
+    let from = "";
+    let to = "";
+    let fileDate = getReportDateKey(today);
+
+    if(selectedReportPeriod === "all"){
+        reportType = "All";
+    }else if(isCustomRange){
+        reportType = "Custom";
+        from = customReportRange.from;
+        to = customReportRange.to;
+        fileDate = from + "-to-" + to;
+    }else if(selectedReportPeriod === "weekly"){
+        const weekStart = getWeekStart(today);
+        const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
+        from = getReportDateKey(weekStart);
+        to = getReportDateKey(weekEnd);
+        fileDate = from + "-to-" + to;
+    }else if(selectedReportPeriod === "monthly"){
+        from = getReportDateKey(today).slice(0, 7);
+        fileDate = from;
+    }else if(selectedReportPeriod === "yearly"){
+        from = String(today.getFullYear());
+        fileDate = from;
+    }else{
+        from = fileDate;
+    }
+
+    let csv = "Business Name," + JSON.stringify(settings.cafeName || "Business") + "\n" +
+        "Report Type," + reportType + "\n" +
+        "From," + from + "\n" +
+        "To," + to + "\n" +
+        "Generated," + new Date().toLocaleString() + "\n\n" +
+        "Total Sales," + summary.totalSales.toFixed(2) + "\n" +
+        "Bills," + summary.totalBills + "\n" +
+        "Subtotal," + summary.subtotal.toFixed(2) + "\n" +
+        "GST," + summary.gst.toFixed(2) + "\n" +
+        "Discounts," + summary.discounts.toFixed(2) + "\n" +
+        "Parcel/Packing Charges," + summary.parcelCharges.toFixed(2) + "\n" +
+        "Profit," + summary.profit.toFixed(2) + "\n\n" +
+        "Date,Bill/Invoice No.,Order No.,Subtotal,GST,Discount,Parcel/Packing Charge,Grand Total,Profit\n";
+    exportedBills.forEach(function(bill){
+        const subtotal = getBillSubtotal(bill);
+        const gst = getBillGST(bill);
+        const discount = getBillDiscount(bill, subtotal);
+        const parcelCharge = toNumber(bill.parcelCharge);
+        const total = getBillTotal(bill, subtotal, gst, discount, parcelCharge);
+
+        csv += [
+            `"${bill.date || ""}"`,
+            `"${bill.billNo || ""}"`,
+            `"${Number.isInteger(Number(bill.orderNo)) ? String(bill.orderNo).padStart(3, "0") : ""}"`,
+            subtotal.toFixed(2),
+            gst.toFixed(2),
+            discount.toFixed(2),
+            parcelCharge.toFixed(2),
+            total.toFixed(2),
+            getBillProfit(bill).toFixed(2)
+        ].join(",") + "\n";
     });
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "sales-report.csv";
+    link.download = `POS-Lite-${reportType}-${sanitizeBackupFileName(settings.cafeName)}-${fileDate}.csv`;
     link.click();
     URL.revokeObjectURL(url);
 }
