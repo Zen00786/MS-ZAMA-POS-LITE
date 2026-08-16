@@ -58,7 +58,7 @@ function showActivationScreen(){
     screen.innerHTML = `
         <div class="activation-card">
             <img class="activation-logo" src="assets/ms-zama-logo.png" alt="MS ZAMA Dynamics" onerror="this.style.display='none'">
-            <h1>MS ZAMA POS Lite</h1>
+            <h1>POS Lite</h1>
             <p>Licensed Software by<br><strong>MS ZAMA Dynamics</strong></p>
             <label for="activation-business-name">Business Name:</label>
             <input id="activation-business-name" type="text" autocomplete="organization">

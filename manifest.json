@@ -1,7 +1,7 @@
 {
-  "name": "MS ZAMA POS Lite",
-  "short_name": "ZPOS Lite",
-  "description": "Offline point of sale application for MS ZAMA.",
+  "name": "POS Lite",
+  "short_name": "POS Lite",
+  "description": "Offline point of sale application by MS ZAMA Dynamics.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

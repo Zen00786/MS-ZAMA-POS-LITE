@@ -69,13 +69,21 @@ document.addEventListener("keydown", function(event){
 
 function showDashboard(){
 
+    loadBills(renderDashboard);
+
+}
+
+function renderDashboard(){
+
+    const todaySummary = getTodaySalesSummary();
+
     content.innerHTML = `
 
         <div class="page-title">
 
             <h1>Dashboard</h1>
 
-            <p>Welcome to ZPOS Lite</p>
+            <p>Welcome to POS Lite</p>
 
         </div>
 
@@ -91,9 +99,9 @@ function showDashboard(){
 
             <div class="card">
 
-                <h3>Total Bills</h3>
+                <h3>Today's Bills</h3>
 
-               <h2>${getTotalBills()}</h2>
+               <h2>${todaySummary.totalBills}</h2>
 
             </div>
 
@@ -107,7 +115,7 @@ function showDashboard(){
 
             <div class="card">
 
-                <h3>Products</h3>
+                <h3>Total Products</h3>
 
         <h2>${products.length}</h2>
 

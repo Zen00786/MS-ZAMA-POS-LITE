@@ -1,190 +1,291 @@
 /* ==========================================
-   Reports
+   Sales summaries and reports
 ========================================== */
 
-function showReports(){
+let selectedReportPeriod = "daily";
+let customReportRange = { from: "", to: "", error: "" };
 
-    let totalSales = 0;
-    let totalBills = billHistory.length;
-    let totalGST = 0;
-    let totalProfit = 0;
+function toNumber(value){
+    const number = Number(value);
+    return Number.isFinite(number) ? number : 0;
+}
 
-    billHistory.forEach(function(bill){
+function getLocalNumericDateOrder(){
+    const sample = new Date(2001, 10, 22).toLocaleDateString();
+    const match = sample.match(/(\d{1,2})[/-](\d{1,2})[/-](\d{4})/);
 
-        totalSales += bill.total;
+    if(!match) return null;
+    if(Number(match[1]) === 22) return "day-month";
+    if(Number(match[2]) === 22) return "month-day";
+    return null;
+}
 
-        bill.items.forEach(function(item){
+/* Bills are historically saved with Date#toLocaleString(). Keep that format
+   unchanged, but parse it defensively before comparing calendar days. */
+function parseSavedBillDate(value){
+    if(value instanceof Date && !Number.isNaN(value.getTime())) return new Date(value.getTime());
+    if(typeof value === "number"){
+        const timestampDate = new Date(value);
+        return Number.isNaN(timestampDate.getTime()) ? null : timestampDate;
+    }
+    if(typeof value !== "string" || value.trim() === "") return null;
 
-            totalGST += (item.total * item.gst) / 100;
+    const match = value.match(/(\d{1,2})[/-](\d{1,2})[/-](\d{4})(?:[^\d]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?)?/i);
+    if(!match){
+        const parsedDate = new Date(value);
+        return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+    }
 
-            totalProfit +=
-                (item.price - Number(findCost(item.name))) * item.qty;
+    let first = Number(match[1]);
+    let second = Number(match[2]);
+    const year = Number(match[3]);
+    let hour = Number(match[4] || 0);
+    const minute = Number(match[5] || 0);
+    const secondValue = Number(match[6] || 0);
+    const meridiem = (match[7] || "").toUpperCase();
+    let month = first;
+    let day = second;
 
-        });
+    /* Indian locale dates are commonly day/month/year; handle unambiguous
+       values when the browser cannot parse the saved locale string. */
+    if(first > 12 && second <= 12){
+        day = first;
+        month = second;
+    }else if(second > 12 && first <= 12){
+        month = first;
+        day = second;
+    }else if(getLocalNumericDateOrder() === "day-month"){
+        day = first;
+        month = second;
+    }
+    if(meridiem === "PM" && hour < 12) hour += 12;
+    else if(meridiem === "AM" && hour === 12) hour = 0;
 
+    const localDate = new Date(year, month - 1, day, hour, minute, secondValue);
+    if(localDate.getFullYear() !== year || localDate.getMonth() !== month - 1 || localDate.getDate() !== day) return null;
+    return localDate;
+}
+
+function isActiveBill(bill){
+    return bill && bill.deleted !== true && bill.isDeleted !== true;
+}
+
+function isSameLocalDay(firstDate, secondDate){
+    return firstDate.getFullYear() === secondDate.getFullYear() && firstDate.getMonth() === secondDate.getMonth() && firstDate.getDate() === secondDate.getDate();
+}
+
+function getWeekStart(date){
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const weekday = start.getDay();
+    start.setDate(start.getDate() - (weekday === 0 ? 6 : weekday - 1));
+    return start;
+}
+
+function getBillsForPeriod(period, referenceDate){
+    const reference = referenceDate instanceof Date ? referenceDate : new Date();
+    const weekStart = getWeekStart(reference);
+    const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 7);
+
+    return billHistory.filter(function(bill){
+        if(!isActiveBill(bill)) return false;
+        const billDate = parseSavedBillDate(bill.date);
+        if(!billDate) return false;
+        if(period === "weekly") return billDate >= weekStart && billDate < weekEnd;
+        if(period === "monthly") return billDate.getFullYear() === reference.getFullYear() && billDate.getMonth() === reference.getMonth();
+        if(period === "yearly") return billDate.getFullYear() === reference.getFullYear();
+        return isSameLocalDay(billDate, reference);
     });
+}
+
+function parseDateInput(value){
+    const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(!match) return null;
+
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+
+    return date.getFullYear() === Number(match[1]) && date.getMonth() === Number(match[2]) - 1 && date.getDate() === Number(match[3]) ? date : null;
+}
+
+function getBillsForDateRange(fromDate, toDate){
+    const start = fromDate instanceof Date ? new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate()) : null;
+    const end = toDate instanceof Date ? new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate() + 1) : null;
+
+    if(!start || !end || start >= end) return [];
+
+    return billHistory.filter(function(bill){
+        if(!isActiveBill(bill)) return false;
+        const billDate = parseSavedBillDate(bill.date);
+        return billDate && billDate >= start && billDate < end;
+    });
+}
+
+function getBillSubtotal(bill){
+    if(Number.isFinite(Number(bill.subtotal))) return Number(bill.subtotal);
+    return (bill.items || []).reduce(function(total, item){
+        return total + toNumber(item.total || (toNumber(item.price) * toNumber(item.qty)));
+    }, 0);
+}
+
+function getBillGST(bill){
+    if(Number.isFinite(Number(bill.gst))) return Number(bill.gst);
+    return (bill.items || []).reduce(function(total, item){
+        return total + (toNumber(item.total || (toNumber(item.price) * toNumber(item.qty))) * toNumber(item.gst) / 100);
+    }, 0);
+}
+
+function getBillDiscount(bill, subtotal){
+    if(Number.isFinite(Number(bill.discount))) return Number(bill.discount);
+    return subtotal * toNumber(bill.discountPercent) / 100;
+}
+
+function getBillTotal(bill, subtotal, gst, discount, parcelCharge){
+    if(Number.isFinite(Number(bill.total))) return Number(bill.total);
+    return subtotal + gst - discount + parcelCharge;
+}
+
+function calculateSalesSummary(bills){
+    const summary = { totalSales: 0, totalBills: 0, subtotal: 0, gst: 0, discounts: 0, parcelCharges: 0, profit: 0 };
+
+    bills.forEach(function(bill){
+        const subtotal = getBillSubtotal(bill);
+        const gst = getBillGST(bill);
+        const discount = getBillDiscount(bill, subtotal);
+        const parcelCharge = toNumber(bill.parcelCharge);
+        const discountRate = subtotal > 0 ? discount / subtotal : 0;
+
+        summary.totalBills++;
+        summary.subtotal += subtotal;
+        summary.gst += gst;
+        summary.discounts += discount;
+        summary.parcelCharges += parcelCharge;
+        summary.totalSales += getBillTotal(bill, subtotal, gst, discount, parcelCharge);
+
+        (bill.items || []).forEach(function(item){
+            if(item.cost === undefined || item.cost === null || item.cost === "") return;
+
+            const quantity = toNumber(item.qty);
+            const sellingAmount = toNumber(item.total || (toNumber(item.price) * quantity));
+            const costAmount = toNumber(item.cost) * quantity;
+
+            /* Bill discounts reduce actual selling value. GST and parcel
+               charges remain separate report fields and never become profit. */
+            summary.profit += (sellingAmount * (1 - discountRate)) - costAmount;
+        });
+    });
+
+    return summary;
+}
+
+function getPeriodLabel(period, referenceDate){
+    const reference = referenceDate instanceof Date ? referenceDate : new Date();
+    const dateFormat = { day: "numeric", month: "short", year: "numeric" };
+    if(period === "weekly"){
+        const weekStart = getWeekStart(reference);
+        const weekEnd = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + 6);
+        return weekStart.toLocaleDateString(undefined, dateFormat) + " – " + weekEnd.toLocaleDateString(undefined, dateFormat);
+    }
+    if(period === "monthly") return reference.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    if(period === "yearly") return String(reference.getFullYear());
+    return reference.toLocaleDateString(undefined, dateFormat);
+}
+
+function getDateRangeLabel(fromDate, toDate){
+    const dateFormat = { day: "numeric", month: "short", year: "numeric" };
+    return fromDate.toLocaleDateString(undefined, dateFormat) + " – " + toDate.toLocaleDateString(undefined, dateFormat);
+}
+
+function formatCurrency(value){ return "₹" + toNumber(value).toFixed(2); }
+
+function getTodaySalesSummary(){ return calculateSalesSummary(getBillsForPeriod("daily")); }
+
+/* Kept for the existing dashboard template; all values use the same summary. */
+function getTotalSales(){ return getTodaySalesSummary().totalSales; }
+
+function getTotalProfit(){ return getTodaySalesSummary().profit; }
+
+function showReports(){ loadBills(renderSalesReport); }
+
+function updateSalesReport(period){
+    selectedReportPeriod = period;
+    renderSalesReport();
+}
+
+function generateCustomSalesReport(){
+    const fromValue = document.getElementById("report-from-date").value;
+    const toValue = document.getElementById("report-to-date").value;
+    const fromDate = parseDateInput(fromValue);
+    const toDate = parseDateInput(toValue);
+
+    customReportRange = { from: fromValue, to: toValue, error: "" };
+
+    if(!fromDate || !toDate){
+        customReportRange.error = "Choose both a From date and a To date.";
+    }else if(fromDate > toDate){
+        customReportRange.error = "From date cannot be after To date.";
+    }
+
+    renderSalesReport();
+}
+
+function renderSalesReport(){
+    const customFromDate = parseDateInput(customReportRange.from);
+    const customToDate = parseDateInput(customReportRange.to);
+    const isValidCustomRange = selectedReportPeriod === "custom" && customFromDate && customToDate && customFromDate <= customToDate;
+    const reportBills = selectedReportPeriod === "custom"
+        ? (isValidCustomRange ? getBillsForDateRange(customFromDate, customToDate) : [])
+        : getBillsForPeriod(selectedReportPeriod);
+    const summary = calculateSalesSummary(reportBills);
+    const periodLabel = selectedReportPeriod === "custom"
+        ? (isValidCustomRange ? getDateRangeLabel(customFromDate, customToDate) : "Custom Date Range")
+        : getPeriodLabel(selectedReportPeriod);
+    const customRangeControls = selectedReportPeriod === "custom" ? `
+            <div style="margin-top:16px;">
+                <label for="report-from-date">From</label><br>
+                <input id="report-from-date" type="date" value="${customReportRange.from}"><br><br>
+                <label for="report-to-date">To</label><br>
+                <input id="report-to-date" type="date" value="${customReportRange.to}"><br><br>
+                <button type="button" onclick="generateCustomSalesReport()">Generate Report</button>
+                ${customReportRange.error ? `<p role="alert">${customReportRange.error}</p>` : ""}
+            </div>` : "";
 
     content.innerHTML = `
-
-    <button onclick="exportSalesCSV()">
-    Export Sales (CSV)
-</button>
-
         <div class="page-title">
-
-            <h1>Reports</h1>
-
-            <p>Business Summary</p>
-
+            <h1>Sales Report</h1>
+            <p>${periodLabel}</p>
         </div>
-
+        <div class="card" style="margin-bottom:20px;">
+            <label for="report-period"><strong>Report Period</strong></label><br><br>
+            <select id="report-period" onchange="updateSalesReport(this.value)">
+                <option value="daily" ${selectedReportPeriod === "daily" ? "selected" : ""}>Daily</option>
+                <option value="weekly" ${selectedReportPeriod === "weekly" ? "selected" : ""}>Weekly</option>
+                <option value="monthly" ${selectedReportPeriod === "monthly" ? "selected" : ""}>Monthly</option>
+                <option value="yearly" ${selectedReportPeriod === "yearly" ? "selected" : ""}>Yearly</option>
+                <option value="custom" ${selectedReportPeriod === "custom" ? "selected" : ""}>Custom Date Range</option>
+            </select>
+            <button style="margin-left:12px;" onclick="exportSalesCSV()">Export Sales (CSV)</button>
+            ${customRangeControls}
+        </div>
         <div class="dashboard-grid">
-
-            <div class="card">
-
-                <h3>Total Sales</h3>
-
-                <h2>₹${totalSales.toFixed(2)}</h2>
-
-            </div>
-
-            <div class="card">
-
-                <h3>Total Bills</h3>
-
-                <h2>${totalBills}</h2>
-
-            </div>
-
-            <div class="card">
-
-                <h3>GST Collected</h3>
-
-                <h2>₹${totalGST.toFixed(2)}</h2>
-
-            </div>
-
-            <div class="card">
-
-                <h3>Estimated Profit</h3>
-
-                <h2>₹${totalProfit.toFixed(2)}</h2>
-
-            </div>
-
-        </div>
-
-    `;
-
+            <div class="card"><h3>Total Sales</h3><h2>${formatCurrency(summary.totalSales)}</h2></div>
+            <div class="card"><h3>Total Bills</h3><h2>${summary.totalBills}</h2></div>
+            <div class="card"><h3>Subtotal</h3><h2>${formatCurrency(summary.subtotal)}</h2></div>
+            <div class="card"><h3>GST</h3><h2>${formatCurrency(summary.gst)}</h2></div>
+            <div class="card"><h3>Discounts</h3><h2>${formatCurrency(summary.discounts)}</h2></div>
+            <div class="card"><h3>Parcel Charges</h3><h2>${formatCurrency(summary.parcelCharges)}</h2></div>
+            <div class="card"><h3>Profit</h3><h2>${formatCurrency(summary.profit)}</h2></div>
+        </div>`;
 }
-
-
-/* ==========================================
-   Dashboard Helpers
-========================================== */
-
-function getTotalSales(){
-
-    let total = 0;
-
-    billHistory.forEach(function(bill){
-
-        total += bill.total;
-
-    });
-
-    return total;
-
-}
-
-function getTotalProfit(){
-
-    let profit = 0;
-
-    billHistory.forEach(function(bill){
-
-        bill.items.forEach(function(item){
-
-            if(item.cost !== undefined){
-
-                profit +=
-                    (Number(item.price) - Number(item.cost))
-                    * Number(item.qty);
-
-            }
-
-        });
-
-    });
-
-    return profit;
-
-}
-
-/* ==========================================
-   Dashboard Helpers
-========================================== */
-
-function getTotalBills(){
-
-    return billHistory.length;
-
-}
-
-function getTotalSales(){
-
-    let sales = 0;
-
-    billHistory.forEach(function(bill){
-
-        sales += Number(bill.total);
-
-    });
-
-    return sales;
-
-}
-
-
-/*CSV Reporting*/
 
 function exportSalesCSV(){
-
-    let csv =
-"Invoice No,Date,Customer,Phone,Payment,Subtotal,GST,Grand Total\n";
-
+    let csv = "Invoice No,Date,Customer,Phone,Payment,Subtotal,GST,Grand Total\n";
     billHistory.forEach(function(bill){
-
-csv += [
-    `"${bill.billNo}"`,
-    `"${bill.date}"`,
-    `"${bill.customerName}"`,
-    `"${bill.customerPhone}"`,
-    `"${bill.paymentMethod}"`,
-    `"${bill.subtotal}"`,
-    `"${bill.gst}"`,
-    `"${bill.total}"`
-].join(",") + "\n";
-
+        csv += [ `"${bill.billNo}"`, `"${bill.date}"`, `"${bill.customerName}"`, `"${bill.customerPhone}"`, `"${bill.paymentMethod}"`, `"${bill.subtotal}"`, `"${bill.gst}"`, `"${bill.total}"` ].join(",") + "\n";
     });
-
-    const blob = new Blob([csv],{
-        type:"text/csv"
-    });
-
-    const url =
-        URL.createObjectURL(blob);
-
-    const a =
-        document.createElement("a");
-
-    a.href = url;
-
-    a.download =
-"sales-report.csv";
-
-    a.click();
-
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "sales-report.csv";
+    link.click();
     URL.revokeObjectURL(url);
-
 }

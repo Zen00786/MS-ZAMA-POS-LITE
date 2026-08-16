@@ -140,7 +140,7 @@ function showSettings(){
         <div class="card about-card">
 
             <h2>About & License</h2>
-            <p><strong>MS ZAMA POS Lite</strong><br>Version 1.0</p>
+            <p><strong>POS Lite</strong><br>Version 1.0</p>
             <p>Licensed to:<br><strong>${settings.licensedTo || "Not activated"}</strong></p>
             <p>Developed by:<br><strong>MS ZAMA Dynamics</strong></p>
             <p>License Status:<br><strong>${settings.licenseActivated ? "Activated" : "Not Activated"}</strong></p>

@@ -3,6 +3,7 @@
 ========================================== */
 
 let billHistory = [];
+let historyFilter = { from: "", to: "", active: false, error: "" };
 
 function showHistory(){
 
@@ -11,6 +12,8 @@ function showHistory(){
 }
 
 function renderBillHistory(){
+
+    const filteredEntries = getFilteredBillHistoryEntries();
 
     let html = `
 
@@ -22,12 +25,19 @@ function renderBillHistory(){
 
         </div>
 
+        <div class="card" style="margin-bottom:20px;">
+            <label for="history-from-date">From</label><br>
+            <input id="history-from-date" type="date" value="${historyFilter.from}"><br><br>
+            <label for="history-to-date">To</label><br>
+            <input id="history-to-date" type="date" value="${historyFilter.to}"><br><br>
+            <button type="button" onclick="filterBillHistory()">Filter</button>
+            <button type="button" onclick="clearBillHistoryFilter()">Clear Filter</button>
+            ${historyFilter.error ? `<p role="alert">${historyFilter.error}</p>` : ""}
+        </div>
+
     `;
 
-    billHistory
-    .map(function(bill, index){
-        return { bill: bill, index: index };
-    })
+    filteredEntries
     .reverse()
     .forEach(function(entry){
 
@@ -71,6 +81,54 @@ function renderBillHistory(){
     `;
 
     content.innerHTML = html;
+
+}
+
+function getFilteredBillHistoryEntries(){
+
+    const entries = billHistory.map(function(bill, index){
+        return { bill: bill, index: index };
+    });
+
+    if(!historyFilter.active){
+        return entries;
+    }
+
+    const fromDate = parseDateInput(historyFilter.from);
+    const toDate = parseDateInput(historyFilter.to);
+    const matchingBills = new Set(getBillsForDateRange(fromDate, toDate));
+
+    return entries.filter(function(entry){
+        return matchingBills.has(entry.bill);
+    });
+
+}
+
+function filterBillHistory(){
+
+    const fromValue = document.getElementById("history-from-date").value;
+    const toValue = document.getElementById("history-to-date").value;
+    const fromDate = parseDateInput(fromValue);
+    const toDate = parseDateInput(toValue);
+
+    historyFilter = { from: fromValue, to: toValue, active: false, error: "" };
+
+    if(!fromDate || !toDate){
+        historyFilter.error = "Choose both a From date and a To date.";
+    }else if(fromDate > toDate){
+        historyFilter.error = "From date cannot be after To date.";
+    }else{
+        historyFilter.active = true;
+    }
+
+    renderBillHistory();
+
+}
+
+function clearBillHistoryFilter(){
+
+    historyFilter = { from: "", to: "", active: false, error: "" };
+    renderBillHistory();
 
 }
 
